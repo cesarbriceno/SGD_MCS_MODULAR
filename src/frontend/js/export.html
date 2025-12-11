@@ -1,0 +1,132 @@
+<script>
+    function exportarData(formato) {
+        let datos = [], nombreArchivo = '', ordenColumnas = [], idKey = '';
+        
+        // 1. CONFIGURACIÓN (Mapeo de columnas posibles)
+        if (moduloActual === 'estudiante') { 
+            datos = datosGlobales.estudiantes; nombreArchivo = 'Estudiantes_MCS'; idKey = 'ID_Estudiante'; 
+            ordenColumnas = ['ID_Estudiante', 'Tipo_Documento', 'Cedula', 'Lugar_Expedicion', 'Apellido1', 'Apellido2', 'Nombre1', 'Nombre2', 'Sexo', 'Email', 'Telefono', 'Direccion', 'Ciudad', 'Comentarios', 'Fecha_Ingreso', 'Cohorte_Ingreso', 'Estado', 'Fecha_Egreso', 'Cohorte_Egreso', 'Fecha_Retiro', 'Reingreso', 'Fecha_Reingreso', 'Situacion_Laboral_Actual', 'Empresa_Institucion', 'Cargo_Actual', 'Sector_Desempeno', 'Fecha_Registro']; 
+        } 
+        else if (moduloActual === 'docente') { 
+            datos = datosGlobales.docentes; nombreArchivo = 'Docentes_MCS'; idKey = 'ID_Docente'; 
+            ordenColumnas = ['ID_Docente', 'Tipo_Documento', 'Cedula', 'Lugar_Expedicion', 'Apellido1', 'Apellido2', 'Nombre1', 'Nombre2', 'Sexo', 'Email', 'Telefono', 'Comentarios', 'Tipo_Vinculacion', 'Activo', 'Fecha_Vinculacion', 'Fecha_Desvinculacion', 'Nivel_Formacion', 'Especialidad', 'Categoria', 'Link_CvLAC', 'Grupo_Investigacion', 'Linea_Investigacion_Principal', 'Fecha_Registro']; 
+        }
+        else if (moduloActual === 'externo') { 
+            datos = datosGlobales.externos; nombreArchivo = 'Participantes_Externos_MCS'; idKey = 'ID_Externo'; 
+            ordenColumnas = ['ID_Externo', 'Tipo_Documento', 'Numero_Documento', 'Lugar_Expedicion', 'Apellido1', 'Apellido2', 'Nombre1', 'Nombre2', 'Sexo', 'Email', 'Telefono', 'Pais', 'Ciudad', 'Tipo_Origen', 'Organizacion', 'Cargo_Perfil', 'Fecha_Registro']; 
+        }
+        else if (moduloActual === 'tesis') { 
+            datos = datosGlobales.tesis; nombreArchivo = 'Tesis_MCS'; idKey = 'ID_Tesis'; 
+            ordenColumnas = [
+                'ID_Tesis', 'Titulo_Investigacion', 'Año', 'Estado_Tesis', 'Calificacion', 'Modalidad', 'Linea_Investigacion_Tesis', 'Palabras_Clave', 'Resumen', 
+                'Nombre_Estudiante', 'Nombre_Asesor', 'Nombre_Codirector', 'Nombre_Jurado_1', 'Nombre_Jurado_2',
+                'Fecha_Inicio', 'Fecha_Defensa', 'Numero_Acta_Sustentacion', 'URL_Documento'
+            ]; 
+        }
+        else if (moduloActual === 'evento') { 
+            datos = datosGlobales.eventos; nombreArchivo = 'Eventos_MCS'; idKey = 'ID_Evento'; 
+            ordenColumnas = [
+                'ID_Evento', 'Nombre_Evento', 'Tipo_Evento', 'Alcance', 'Modalidad', 'Lugar', 'Fecha_Inicio', 'Fecha_Fin', 'Año', 'Tipo_Participacion', 
+                'Nombres_Estudiantes_Asistentes', 'Rol_Estudiantes', 
+                'Nombres_Docentes_Participantes', 'Rol_Docentes',    
+                'Titulos_Tesis_Vinculadas',                                
+                'Nombres_Instituciones', 'Rol_Instituciones',                 
+                'Nombres_Externos_Participantes', 'Rol_Externos',    
+                'Cantidad_Nacionales', 'Cantidad_Internacionales', 'Perfil_Externos', 
+                'Presupuesto', 'Fuente_Financiacion', 'Descripcion', 'Impacto_Academico', 'URL_Evidencias'
+            ]; 
+        }
+        else if (moduloActual === 'institucion') { 
+            datos = datosGlobales.instituciones; nombreArchivo = 'Instituciones_MCS'; idKey = 'ID_Institucion'; 
+            ordenColumnas = ['ID_Institucion', 'Nombre_Institucion', 'Sigla', 'Tipo', 'Pais', 'Ciudad', 'Contacto_Principal', 'Tipo_Convenio', 'Fecha_Firma_Convenio', 'Vigente', 'URL_Web', 'Activa']; 
+        }
+
+        // 2. FILTRAR POR SELECCIÓN
+        if (seleccionados.size > 0 && idKey) {
+            const datosFiltrados = datos.filter(item => seleccionados.has(item[idKey]));
+            if(datosFiltrados.length > 0) { 
+                datos = datosFiltrados; 
+                Swal.fire({ toast: true, position: 'top-end', icon: 'info', title: `Exportando ${seleccionados.size} registros`, showConfirmButton: false, timer: 2000 }); 
+            }
+        }
+        if (!datos || datos.length === 0) return Swal.fire('Aviso', 'No hay datos para exportar.', 'warning');
+        
+        // ==========================================
+        // 🚀 NUEVA LÓGICA: FILTRAR COLUMNAS VACÍAS
+        // ==========================================
+        const columnasUtiles = ordenColumnas.filter(col => {
+            // Revisa si al menos un registro tiene datos en esta columna
+            return datos.some(registro => {
+                const valor = registro[col];
+                return valor !== null && valor !== undefined && String(valor).trim() !== '';
+            });
+        });
+
+        // Si por alguna razón todo está vacío, dejamos al menos el ID para no romper el excel
+        if (columnasUtiles.length === 0) columnasUtiles.push(idKey);
+
+        // 3. LIMPIEZA DE CABECERAS Y CONSTRUCCIÓN DE DATOS
+        const datosOrdenados = datos.map(row => {
+            const nuevoObj = {};
+            // Usamos 'columnasUtiles' en lugar de todas las columnas
+            columnasUtiles.forEach(k => { 
+                let valor = row[k]; 
+                if (valor === undefined || valor === null) valor = ''; 
+                
+                // Reemplazo visual de cabeceras
+                let llaveLimpia = k.replace(/_/g, ' ')
+                                   .replace('Nombres ', '')
+                                   .replace('Titulos ', '')
+                                   .replace('Vinculadas', '')
+                                   .replace('Participantes', ''); 
+                
+                nuevoObj[llaveLimpia] = valor; 
+            });
+            return nuevoObj;
+        });
+
+        // Generar Fecha
+        const ahora = new Date();
+        const fechaArchivo = ahora.getFullYear() + '-' + String(ahora.getMonth() + 1).padStart(2, '0') + '-' + String(ahora.getDate()).padStart(2, '0') + '_' + String(ahora.getHours()).padStart(2, '0') + '-' + String(ahora.getMinutes()).padStart(2, '0');
+        const fechaLegible = ahora.toLocaleString(); 
+        const nombreFinal = `${nombreArchivo}_${fechaArchivo}`;
+
+        // 4. EXPORTACIÓN
+        if (formato === 'excel') {
+            const ws = XLSX.utils.json_to_sheet(datosOrdenados);
+            const wscols = Object.keys(datosOrdenados[0]).map(k => ({ wch: Math.max(k.length + 2, 15) }));
+            ws['!cols'] = wscols;
+            const wb = XLSX.utils.book_new(); 
+            XLSX.utils.book_append_sheet(wb, ws, "Datos");
+            XLSX.writeFile(wb, nombreFinal + '.xlsx');
+        } else if (formato === 'pdf') {
+            const { jsPDF } = window.jspdf; 
+            const doc = new jsPDF('l', 'mm', 'a2'); // Hoja A2 (Grande)
+
+            const head = [Object.keys(datosOrdenados[0])]; 
+            const body = datosOrdenados.map(Object.values);
+            
+            doc.setFontSize(14); 
+            doc.text(`Reporte: ${nombreArchivo.replace(/_/g, ' ')}`, 14, 15);
+            doc.setFontSize(10);
+            doc.setTextColor(100); 
+            doc.text(`Generado: ${fechaLegible}`, 14, 22);
+            
+            doc.autoTable({ 
+                head: head, 
+                body: body, 
+                startY: 30, 
+                styles: { 
+                    fontSize: 9, 
+                    cellPadding: 3, 
+                    overflow: 'linebreak',
+                    valign: 'middle'
+                }, 
+                headStyles: { fillColor: [44, 62, 80], fontSize: 10, fontStyle: 'bold' },
+                theme: 'grid',
+                margin: { top: 30, left: 10, right: 10 }
+            });
+            doc.save(nombreFinal + '.pdf');
+        }
+    }
+</script>

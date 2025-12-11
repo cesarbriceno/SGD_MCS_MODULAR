@@ -1,0 +1,102 @@
+<script>
+    function renderEstudiantes(d) {
+       const tb = document.getElementById('tabla-estudiantes-body'); tb.innerHTML='';
+       (d||[]).forEach(i => {
+           let badge = i.Estado==='Activo'?'bg-success':(i.Estado==='Retirado'?'bg-danger':'bg-secondary');
+           let iconoEstado = i.Estado==='Activo'?'✅':(i.Estado==='Graduado'?'🎓':'🚫');
+           const btns = getBotonesAccion('estudiante', i.ID_Estudiante);
+           tb.innerHTML+=`<tr><td>${getCheck(i.ID_Estudiante)}</td><td class="fw-bold small">${i.ID_Estudiante}</td><td>${i.Apellido1} ${i.Nombre1}</td><td>${i.Cedula}</td><td>${i.Cohorte_Ingreso}</td><td><span class="badge ${badge} badge-uniforme">${iconoEstado} ${i.Estado}</span></td><td>${btns}</td></tr>`;
+       });
+    }
+    function renderDocentes(d) { 
+        const tb=document.getElementById('tabla-docentes-body'); tb.innerHTML=''; 
+        (d||[]).forEach(i=>{ 
+            let badge=i.Activo==='Sí'?'bg-success':'bg-danger'; 
+            const btns = getBotonesAccion('docente', i.ID_Docente);
+            tb.innerHTML+=`<tr><td>${getCheck(i.ID_Docente)}</td><td class="fw-bold small">${i.ID_Docente}</td><td>${i.Apellido1} ${i.Nombre1}</td><td>${i.Cedula}</td><td>${i.Email}</td><td>${i.Tipo_Vinculacion}</td><td><span class="badge ${badge} badge-uniforme">${i.Activo==='Sí'?'✅ Activo':'🚫 Inactivo'}</span></td><td>${btns}</td></tr>`; 
+        });
+    }
+    function renderExternos(d) { 
+        const tb=document.getElementById('tabla-externos-body'); tb.innerHTML=''; 
+        (d||[]).forEach(i=>{ 
+            let icono = i.Tipo_Origen==='Nacional' ? '🇨🇴' : '🌎';
+            const btns = getBotonesAccion('externo', i.ID_Externo);
+            tb.innerHTML+=`<tr><td>${getCheck(i.ID_Externo)}</td><td class="fw-bold small">${i.ID_Externo}</td><td>${i.Nombre1} ${i.Apellido1}</td><td>${i.Organizacion}</td><td>${icono} ${i.Tipo_Origen}</td><td>${i.Pais}/${i.Ciudad}</td><td>${btns}</td></tr>`; 
+        });
+    }
+    function renderTesis(d) { 
+        const tb = document.getElementById('tabla-tesis-body'); tb.innerHTML = ''; 
+        (d||[]).forEach(i => { 
+            let est = i.Estado_Tesis; let badge='bg-secondary'; let icon='<i class="fas fa-circle"></i>';
+            if(est.includes('Curso')){ badge='bg-primary'; icon='<i class="fas fa-spinner fa-spin"></i>'; }
+            else if(est.includes('Defendida')||est.includes('Publicada')){ badge='bg-success'; icon='<i class="fas fa-check-circle"></i>'; }
+            else if(est.includes('Cancelada')){ badge='bg-danger'; icon='<i class="fas fa-times-circle"></i>'; }
+            
+            const estudiante = datosGlobales.estudiantes.find(e => String(e.ID_Estudiante) === String(i.ID_Estudiante));
+            const nombreEst = estudiante ? `${estudiante.Nombre1} ${estudiante.Apellido1}` : (i.Nombre_Estudiante || i.ID_Estudiante); 
+            const asesor = datosGlobales.docentes.find(d => String(d.ID_Docente) === String(i.ID_Asesor));
+            const nombreAsesor = asesor ? `${asesor.Nombre1} ${asesor.Apellido1}` : (i.Nombre_Asesor || 'Sin Asignar');
+            const btns = getBotonesAccion('tesis', i.ID_Tesis);
+            
+            tb.innerHTML+=`<tr><td>${getCheck(i.ID_Tesis)}</td><td class="fw-bold small text-muted">${i.ID_Tesis}</td><td title="${i.Titulo_Investigacion}">${i.Titulo_Investigacion.substring(0,40)}...</td><td class="small"><i class="fas fa-user-graduate me-1 text-primary"></i>${nombreEst}</td><td class="small text-muted"><i class="fas fa-chalkboard-teacher me-1"></i>${nombreAsesor}</td><td class="small text-muted"><i>${i.Linea_Investigacion_Tesis||'-'}</i></td><td><span class="badge ${badge} badge-uniforme">${icon} ${est}</span></td><td><span class="badge bg-light text-dark border">${i.Modalidad}</span></td><td>${btns}</td></tr>`; 
+        });
+    }
+    function renderEventos(d) { 
+        const tb=document.getElementById('tabla-eventos-body'); tb.innerHTML=''; 
+        (d||[]).forEach(i=>{ 
+            const btns = getBotonesAccion('evento', i.ID_Evento);
+            let iconMod = i.Modalidad==='Virtual'?'<i class="fas fa-laptop"></i>':'<i class="fas fa-users"></i>';
+            let colorTipo = i.Tipo_Evento==='Congreso'?'bg-primary':(i.Tipo_Evento==='Seminario'?'bg-warning text-dark':(i.Tipo_Evento==='Taller'?'bg-success':'bg-secondary'));
+            let alc = i.Alcance || 'Local'; let colorAlc = alc === 'Internacional' ? 'bg-dark text-white' : (alc === 'Nacional' ? 'bg-info text-dark' : 'bg-light text-dark border');
+            let rol = i.Tipo_Participacion||'N/A'; let badgeRol='bg-secondary'; let iconRol='';
+            if(rol.includes('Organizador')) { badgeRol='bg-purple text-white'; iconRol='<i class="fas fa-sitemap me-1"></i>'; }
+            else if(rol.includes('Ponente')) { badgeRol='bg-success'; iconRol='<i class="fas fa-microphone-alt me-1"></i>'; }
+            let styleRol = rol.includes('Organizador') ? 'style="background-color: #9C27B0;"' : '';
+
+            let rawInst = i.IDs_Instituciones || i.Instituciones_Asociadas || '';
+            let instDisplay = [], instSearch = [];
+            if(rawInst.trim()){
+                rawInst.split(',').forEach(id => {
+                    const found = datosGlobales.instituciones.find(x => String(x.ID_Institucion) === String(id.trim()));
+                    if(found) { instDisplay.push(found.Sigla || found.Nombre_Institucion); instSearch.push(found.Nombre_Institucion); } else { instDisplay.push(id); }
+                });
+            }
+            let textoVisible = instDisplay.length > 0 ? `<small class="text-primary" title="${instDisplay.join(', ')}"><i class="fas fa-handshake me-1"></i>${instDisplay.slice(0,3).join(', ')}${instDisplay.length>3?'...':''}</small>` : '<span class="text-muted small">-</span>';
+            let dataSearch = `${i.ID_Evento} ${i.Nombre_Evento} ${i.Tipo_Evento} ${alc} ${rol} ${instSearch.join(' ')}`.toLowerCase();
+
+            tb.innerHTML+=`<tr data-search="${dataSearch}"><td>${getCheck(i.ID_Evento)}</td><td class="fw-bold small">${i.ID_Evento}</td><td><div class="fw-bold">${i.Nombre_Evento}</div><span class="badge ${colorAlc} rounded-pill" style="font-size:0.7em">${alc}</span></td><td><span class="badge ${badgeRol}" ${styleRol}>${iconRol} ${rol}</span></td><td><span class="badge ${colorTipo}">${i.Tipo_Evento}</span></td><td>${textoVisible}</td><td class="small"><div><i class="fas fa-calendar-alt text-muted me-1"></i>${i.Fecha_Inicio}</div><div class="text-muted"><i class="fas fa-map-marker-alt me-1"></i>${i.Lugar}</div></td><td><span class="badge bg-light text-dark border">${iconMod} ${i.Modalidad}</span></td><td>${btns}</td></tr>`; 
+        });
+    }
+    function renderInstituciones(d) { 
+        const tb=document.getElementById('tabla-instituciones-body'); tb.innerHTML=''; 
+        (d||[]).forEach(i=>{ 
+            let badge=i.Vigente==='Sí'?'bg-success':'bg-danger';
+            const btns = getBotonesAccion('institucion', i.ID_Institucion);
+            tb.innerHTML+=`<tr><td>${getCheck(i.ID_Institucion)}</td><td class="fw-bold small">${i.ID_Institucion}</td><td>${i.Nombre_Institucion}</td><td>${i.Pais}</td><td>${i.Tipo}</td><td><span class="badge ${badge}">${i.Vigente==='Sí'?'Vigente':'Vencido'}</span></td><td>${btns}</td></tr>`; 
+        });
+    }
+    
+    function verDetalle(mod, id) {
+        try {
+            const config = { 'estudiante': {lista:'estudiantes', colID:'ID_Estudiante'}, 'docente': {lista:'docentes', colID:'ID_Docente'}, 'externo': {lista:'externos', colID:'ID_Externo'}, 'tesis': {lista:'tesis', colID:'ID_Tesis'}, 'evento': {lista:'eventos', colID:'ID_Evento'}, 'institucion': {lista:'instituciones', colID:'ID_Institucion'} };
+            const conf = config[mod]; if(!conf) throw new Error("Módulo no configurado");
+            const registro = datosGlobales[conf.lista].find(item => String(item[conf.colID]) === String(id));
+            if (!registro) return Swal.fire('Error', `No se encontró el registro: ${id}`, 'error');
+
+            const orden = ['ID_Estudiante', 'ID_Docente', 'ID_Externo', 'ID_Tesis', 'ID_Evento', 'ID_Institucion', 'Nombre_Evento', 'Nombre_Institucion', 'Titulo_Investigacion', 'Nombre1', 'Apellido1', 'Nombre_Completo', 'Tipo_Evento', 'Alcance', 'Estado', 'Estado_Tesis', 'Tipo_Documento', 'Cedula', 'Numero_Documento', 'Email', 'Telefono', 'Modalidad', 'Lugar', 'Fecha_Inicio', 'Fecha_Fin', 'Año', 'Tipo_Participacion', 'IDs_Estudiantes_Asistentes', 'Nombres_Estudiantes_Asistentes', 'IDs_Docentes_Participantes', 'Nombres_Docentes_Participantes', 'IDs_Externos_Participantes', 'Nombres_Externos_Participantes', 'IDs_Instituciones', 'Nombres_Instituciones', 'Cantidad_Nacionales', 'Cantidad_Internacionales', 'Perfil_Externos', 'Presupuesto', 'Fuente_Financiacion', 'Pais', 'Ciudad', 'Direccion', 'Cohorte_Ingreso', 'Programa', 'Línea_Investigacion', 'Descripcion', 'Impacto_Academico', 'URL_Evidencias', 'URL_Documento'];
+            let html = '';
+            const llaves = Object.keys(registro).sort((a,b) => { let idxA=orden.indexOf(a), idxB=orden.indexOf(b); if(idxA===-1) idxA=999; if(idxB===-1) idxB=999; return idxA-idxB; });
+
+            llaves.forEach(k => {
+                if(['Ultima_Actualizacion', 'Fecha_Registro'].includes(k)) return;
+                let v = registro[k]; if(v === '' || v === null || v === undefined) return;
+                let lbl = k.replace(/_/g, ' ').replace('IDs', 'Vinculación').replace('ID', 'Código');
+                html += `<tr><th class="bg-light text-secondary small align-middle" style="width: 35%;">${lbl}</th><td class="small">${v}</td></tr>`;
+            });
+            document.getElementById('tabla-detalle-contenido').innerHTML = html;
+            const modalEl = document.getElementById('modal-ver-detalle');
+            const modal = bootstrap.Modal.getOrCreateInstance(modalEl);
+            modal.show();
+        } catch (e) { console.error(e); Swal.fire('Error', 'No se pudo cargar el detalle.', 'error'); }
+    }
+</script>
