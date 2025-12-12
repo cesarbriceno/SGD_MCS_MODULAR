@@ -1,42 +1,170 @@
 <script>
-    // ✅ ESTA ES LA FUNCIÓN QUE TE FALTABA
+    // ==========================================
+    // 1. CARGA INICIAL DE DATOS
+    // ==========================================
     function cargarTodosLosDatos() {
        mostrarLoader(true);
        google.script.run.withSuccessHandler(res => {
            if(res.success) {
                datosGlobales = res.data;
-               // Verificamos que las funciones de render existan antes de ejecutarlas
+               // Renderizamos solo si las funciones existen (seguridad)
                if(typeof renderEstudiantes === 'function') renderEstudiantes(datosGlobales.estudiantes);
                if(typeof renderDocentes === 'function') renderDocentes(datosGlobales.docentes);
-               if(typeof renderExternos === 'function') renderExternos(datosGlobales.externos); // Nuevo módulo
+               if(typeof renderExternos === 'function') renderExternos(datosGlobales.externos);
                if(typeof renderTesis === 'function') renderTesis(datosGlobales.tesis);
                if(typeof renderEventos === 'function') renderEventos(datosGlobales.eventos);
                if(typeof renderInstituciones === 'function') renderInstituciones(datosGlobales.instituciones);
            }
            mostrarLoader(false);
+       }).withFailureHandler(err => {
+           console.error(err);
+           mostrarLoader(false);
+           Swal.fire('Error', 'No se pudieron cargar los datos.', 'error');
        }).obtenerDatosIniciales();
     }
 
-    // --- RESTO DE TUS FUNCIONES (YA ESTABAN BIEN) ---
-    function toggleReingreso() { const s=document.getElementById('reingresoSi').checked; const d=document.getElementById('div-est-reingreso'); if(s){d.style.display='block';} else{d.style.display='none';} }
-    function toggleEstadoEstudiante() { const v=val('est-estado'); document.getElementById('div-est-graduado').style.display=v==='Graduado'?'block':'none'; document.getElementById('div-est-retirado').style.display=v==='Retirado'?'block':'none'; }
-    function toggleDocenteActivo() { const d = document.getElementById('div-doc-desvinculacion'); if(val('doc-activo')==='No') { d.style.display='block'; } else { d.style.display='none'; } }
-    function val(id){ return document.getElementById(id) ? document.getElementById(id).value : ''; }
-    function setVal(id,v){ if(document.getElementById(id)) document.getElementById(id).value=v||''; }
-    function gestionarSeleccion(id){ if(seleccionados.has(id)) seleccionados.delete(id); else seleccionados.add(id); updateBarra(); }
-    function toggleSeleccionarTodo(el,id){ document.querySelectorAll(`#${id} .row-checkbox`).forEach(c=>{ c.checked=el.checked; el.checked?seleccionados.add(c.value):seleccionados.delete(c.value); }); updateBarra(); }
-    function deseleccionarTodo(){ seleccionados.clear(); document.querySelectorAll('.row-checkbox').forEach(c=>c.checked=false); updateBarra(); }
-    function updateBarra(){ document.getElementById('contador-seleccion').innerText=seleccionados.size; const b=document.querySelector('.floating-action-bar'); seleccionados.size>0?b.classList.add('visible'):b.classList.remove('visible'); }
-    function validarInput(input, tipo) { let esValido = true; if (input.hasAttribute('required') && input.value.trim() === '') esValido = false; if (tipo === 'numero') input.value = input.value.replace(/\D/g, ''); if (tipo === 'email' && input.value.length > 0 && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(input.value)) esValido = false; input.classList.toggle('is-invalid', !esValido); input.classList.toggle('is-valid', esValido); }
-    function mostrarLoader(v){ document.getElementById('loader').style.display=v?'flex':'none'; }
-    function filtrarTabla(id,t){ const v=t.toLowerCase(); document.querySelectorAll(`#${id}-body tr`).forEach(r=>{ const txt = r.innerText.toLowerCase(); const search = r.getAttribute('data-search')||''; r.style.display=(txt.includes(v)||search.includes(v))?'':'none'; }); }
-    function cb(res){ mostrarLoader(false); if(res.success){ Swal.fire('Listo',res.message,'success'); document.querySelectorAll('.modal').forEach(m => { const instance = bootstrap.Modal.getInstance(m); if (instance) instance.hide(); }); cargarTodosLosDatos(); deseleccionarTodo(); } else Swal.fire('Error',res.message,'error'); }
-    function err(e) { mostrarLoader(false); Swal.fire('Error de Sistema', e.message, 'error'); }
-    function configurarListenersGlobales() { document.querySelectorAll('form').forEach(f => f.addEventListener('submit', e => { e.preventDefault(); enviarFormulario(f.id); })); }
-    
-    function getCheck(id) { return `<input type="checkbox" class="row-checkbox" value="${id}" onchange="gestionarSeleccion('${id}')">`; }
-    function getBotonesAccion(mod, id) { 
-        return `<div class="btn-group"><button class="btn btn-sm btn-light border text-info" onclick="verDetalle('${mod}','${id}')"><i class="fas fa-eye"></i></button><button class="btn btn-sm btn-light border text-primary" onclick="editarIndividual('${mod}','${id}')"><i class="fas fa-pen"></i></button><button class="btn btn-sm btn-light border text-danger" onclick="eliminarIndividual('${mod}','${id}')"><i class="fas fa-trash"></i></button></div>`; 
+    // ==========================================
+    // 2. VALIDACIONES EN TIEMPO REAL
+    // ==========================================
+    function validarInput(input, tipo) { 
+        let esValido = true; 
+        const valor = input.value;
+        const id = input.id;
+
+        // Regla: Campos Obligatorios
+        if (input.hasAttribute('required') && valor.trim() === '') {
+            esValido = false;
+        } 
+
+        // Regla: Solo Texto (Nombres y Apellidos) -> NO NÚMEROS
+        if (tipo === 'texto') {
+            if (/[0-9]/.test(valor)) {
+                input.value = valor.replace(/[0-9]/g, ''); // Borra números automáticamente
+            }
+        }
+        
+        // Regla: Documentos (Numérico estricto para CC/TI, Alfanumérico para otros)
+        if (tipo === 'numero' || id.includes('cedula') || id.includes('documento')) {
+            const prefijo = id.split('-')[0]; // est, doc, ext
+            const selectTipoDoc = document.getElementById(`${prefijo}-tipo-documento`);
+            
+            // Si hay selector y es CC o TI, prohibir letras
+            if (selectTipoDoc && (selectTipoDoc.value === 'CC' || selectTipoDoc.value === 'TI')) {
+                if (/\D/.test(valor)) input.value = valor.replace(/\D/g, '');
+            }
+            // Si es Pasaporte, Extranjería o no hay selector, PERMITIR letras (no hacemos nada)
+        }
+        
+        // Regla: Teléfono (Solo números y el símbolo +)
+        if (tipo === 'telefono') {
+             input.value = valor.replace(/[^0-9+]/g, '');
+        }
+
+        // Regla: Email
+        if (tipo === 'email' && valor.length > 0) {
+            if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(valor)) esValido = false; 
+        }
+
+        // Aplicar estilos visuales
+        if (esValido) {
+            input.classList.remove('is-invalid');
+            input.classList.add('is-valid');
+        } else {
+            input.classList.remove('is-valid');
+            input.classList.add('is-invalid');
+        }
     }
+
+    // ==========================================
+    // 3. HELPERS VISUALES (TOGGLES)
+    // ==========================================
+    function toggleReingreso() { const s=document.getElementById('reingresoSi'); const d=document.getElementById('div-est-reingreso'); if(s && d) d.style.display=s.checked?'block':'none'; }
+    
+    function toggleEstadoEstudiante() { 
+        const v = val('est-estado'); 
+        const dGrad = document.getElementById('div-est-graduado'); 
+        const dRet = document.getElementById('div-est-retirado'); 
+        if(dGrad) dGrad.style.display = (v === 'Graduado') ? 'block' : 'none'; 
+        if(dRet) dRet.style.display = (v === 'Retirado') ? 'block' : 'none'; 
+    }
+    
+    function toggleDocenteActivo() { 
+        const d = document.getElementById('div-doc-desvinculacion'); 
+        if(d) d.style.display = (val('doc-activo') === 'No') ? 'block' : 'none'; 
+    }
+
+    // ==========================================
+    // 4. FUNCIONES DE UTILIDAD GENERAL
+    // ==========================================
+    function val(id){ const el = document.getElementById(id); return el ? el.value : ''; }
+    function setVal(id,v){ const el = document.getElementById(id); if(el) el.value=v||''; }
+    
+    function mostrarLoader(v){ document.getElementById('loader').style.display=v?'flex':'none'; }
+    
+    function filtrarTabla(id,t){ 
+        const v=t.toLowerCase(); 
+        document.querySelectorAll(`#${id}-body tr`).forEach(r=>{ 
+            const txt = r.innerText.toLowerCase(); 
+            const search = r.getAttribute('data-search')||''; 
+            r.style.display=(txt.includes(v)||search.includes(v))?'':'none'; 
+        }); 
+    }
+
+    // ==========================================
+    // 5. GESTIÓN DE TABLAS Y SELECCIÓN
+    // ==========================================
+    function getCheck(id) { return `<input type="checkbox" class="row-checkbox" value="${id}" onchange="gestionarSeleccion('${id}')">`; }
+    
+    function getBotonesAccion(mod, id) { 
+        return `<div class="btn-group"><button class="btn btn-sm btn-light border text-info" onclick="verDetalle('${mod}','${id}')" title="Ver Detalle"><i class="fas fa-eye"></i></button><button class="btn btn-sm btn-light border text-primary" onclick="editarIndividual('${mod}','${id}')" title="Editar"><i class="fas fa-pen"></i></button><button class="btn btn-sm btn-light border text-danger" onclick="eliminarIndividual('${mod}','${id}')" title="Eliminar"><i class="fas fa-trash"></i></button></div>`; 
+    }
+    
     function setModulo(mod) { moduloActual = mod; deseleccionarTodo(); }
+
+    function gestionarSeleccion(id){ if(seleccionados.has(id)) seleccionados.delete(id); else seleccionados.add(id); updateBarra(); }
+    
+    function toggleSeleccionarTodo(el,id){ 
+        document.querySelectorAll(`#${id} .row-checkbox`).forEach(c=>{ 
+            c.checked=el.checked; 
+            el.checked ? seleccionados.add(c.value) : seleccionados.delete(c.value); 
+        }); 
+        updateBarra(); 
+    }
+    
+    function deseleccionarTodo(){ seleccionados.clear(); document.querySelectorAll('.row-checkbox').forEach(c=>c.checked=false); updateBarra(); }
+    
+    function updateBarra(){ 
+        const contador = document.getElementById('contador-seleccion');
+        const barra = document.querySelector('.floating-action-bar');
+        if(contador) contador.innerText=seleccionados.size; 
+        if(barra) barra.classList.toggle('visible', seleccionados.size > 0); 
+    }
+
+    // ==========================================
+    // 6. COMUNICACIÓN CON BACKEND (CALLBACKS)
+    // ==========================================
+    function cb(res){ 
+        mostrarLoader(false); 
+        if(res.success){ 
+            Swal.fire({ title: 'Listo', text: res.message, icon: 'success', timer: 1500, showConfirmButton: false }); 
+            // Cerrar cualquier modal abierto
+            document.querySelectorAll('.modal').forEach(m => { 
+                const instance = bootstrap.Modal.getInstance(m); 
+                if (instance) instance.hide(); 
+            }); 
+            cargarTodosLosDatos(); 
+            deseleccionarTodo(); 
+        } else {
+            Swal.fire('Error', res.message, 'error'); 
+        }
+    }
+    
+    function err(e) { mostrarLoader(false); Swal.fire('Error de Sistema', e.message, 'error'); }
+    
+    function configurarListenersGlobales() { 
+        document.querySelectorAll('form').forEach(f => f.addEventListener('submit', e => { 
+            e.preventDefault(); 
+            enviarFormulario(f.id); 
+        })); 
+    }
 </script>

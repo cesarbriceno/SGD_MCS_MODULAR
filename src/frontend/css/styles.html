@@ -1,23 +1,50 @@
 <style>
     :root { --primary: #2c3e50; --accent: #4a86e8; --bg-gradient: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%); }
     body { background: var(--bg-gradient); min-height: 100vh; padding-bottom: 80px; font-family: 'Segoe UI', sans-serif; font-size: 0.9rem; }
+    
     .main-card { background: white; border-radius: 15px; box-shadow: 0 10px 30px rgba(0,0,0,0.1); margin-top: 30px; min-height: 85vh; }
     .header-bar { background: var(--primary); color: white; padding: 15px 30px; display: flex; justify-content: space-between; align-items: center; border-radius: 15px 15px 0 0; }
+    
     .nav-tabs .nav-link { color: var(--primary) !important; font-weight: 700 !important; font-size: 1rem; border: none; }
     .nav-tabs .nav-link.active { color: var(--primary) !important; border-bottom: 3px solid var(--primary) !important; background-color: transparent; }
+    .nav-tabs .nav-link:hover { background-color: rgba(0,0,0,0.05); }
+
     .table thead { background-color: var(--primary); color: white; }
     .badge-uniforme { min-width: 110px; display: inline-block; text-align: center; font-weight: 500; padding: 6px; }
-    .floating-action-bar { position: fixed; bottom: 30px; left: 50%; transform: translateX(-50%); background: #333; color: white; padding: 10px 25px; border-radius: 50px; box-shadow: 0 10px 25px rgba(0,0,0,0.3); display: none; align-items: center; gap: 15px; z-index: 2000; }
+    
+    /* === CORRECCIÓN AQUÍ: BARRA FLOTANTE (NIVEL 1000) === */
+    .floating-action-bar { 
+        position: fixed; 
+        bottom: 30px; 
+        left: 50%; 
+        transform: translateX(-50%); 
+        background: #333; 
+        color: white; 
+        padding: 10px 25px; 
+        border-radius: 50px; 
+        box-shadow: 0 10px 25px rgba(0,0,0,0.3); 
+        display: none; 
+        align-items: center; 
+        gap: 15px; 
+        z-index: 1000; /* Bajamos de 2000 a 1000 para que el modal la tape */
+    }
     .floating-action-bar.visible { display: flex; }
+    
     .btn-float { position: fixed; bottom: 30px; right: 30px; width: 60px; height: 60px; border-radius: 50%; font-size: 24px; z-index: 1000; box-shadow: 0 4px 10px rgba(0,0,0,0.3); }
+    
     .campo-oculto { display: none; }
     .condicional-box { padding: 15px; border-radius: 8px; margin-top: 10px; margin-bottom: 10px; border-left: 5px solid; }
     .bg-graduado { background-color: #f0fdf4; border-color: #22c55e; }
     .bg-retirado { background-color: #fef2f2; border-color: #ef4444; }
     .bg-activo { background-color: #eff6ff; border-color: #3b82f6; }
+
+    /* === MODALES SIEMPRE ARRIBA (NIVEL 1050+) === */
     .modal-backdrop { z-index: 1050 !important; }
     .modal { z-index: 1060 !important; }
     .modal-dialog { z-index: 1070 !important; }
+    
+    /* === ALERTAS ENCIMA DE TODO (NIVEL 2000) === */
     .swal2-container { z-index: 2000 !important; }
+    
     #loader { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(255,255,255,0.95); z-index: 9999; display: none; justify-content: center; align-items: center; flex-direction: column; }
 </style>
