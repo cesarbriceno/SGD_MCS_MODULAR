@@ -1,8 +1,15 @@
+<!-- 
+  This component contains the floating action bar and the primary floating action button.
+  - Floating Action Bar: Displays the number of selected items and provides buttons for bulk editing and deletion.
+  - Floating Action Button: Provides a quick way to open the modal for creating new records.
+-->
 <div id="barra-acciones" class="floating-action-bar">
     <span class="fw-bold"><span id="contador-seleccion">0</span> seleccionados</span>
     <div class="vr bg-white mx-2"></div>
-    <button class="btn btn-outline-light btn-sm" onclick="abrirModalMasivo()"><i class="fas fa-pen me-1"></i> Editar</button>
-    <button class="btn btn-danger btn-sm" onclick="confirmarEliminacionMasiva()"><i class="fas fa-trash me-1"></i> Eliminar</button>
+    <button class="btn btn-outline-light btn-sm" onclick="abrirModalMasivo()"><i class="fas fa-pen me-1"></i>
+        Editar</button>
+    <button class="btn btn-danger btn-sm" onclick="confirmarEliminacionMasiva()"><i class="fas fa-trash me-1"></i>
+        Eliminar</button>
     <button class="btn-close btn-close-white ms-3" onclick="deseleccionarTodo()"></button>
 </div>
 <button class="btn btn-primary btn-float" onclick="abrirModalCrear()"><i class="fas fa-plus"></i></button>

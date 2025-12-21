@@ -1,0 +1,67 @@
+{
+    "source": {
+        "include": [
+            "src/backend",
+            "src/frontend/js"
+        ],
+        "includePattern": ".+\\.js(doc|x)?$",
+        "excludePattern": "(^|\\/|\\\\)_"
+    },
+    "opts": {
+        "template": "node_modules/clean-jsdoc-theme",
+        "destination": "./docs",
+        "recurse": true,
+        "readme": "README.md",
+        "theme_opts": {
+            "theme": "dark",
+            "title": "SGD-MCS Doc",
+            "homepageTitle": "Inicio | Home",
+            "include_client_id": false,
+            "displayModuleId": true,
+            "search": true,
+            "meta": [
+                {
+                    "name": "description",
+                    "content": "Documentación del Sistema de Gestión Documental MCS"
+                },
+                {
+                    "name": "keywords",
+                    "content": "JSDoc, Documentation, SGD, MCS, Apps Script"
+                }
+            ],
+            "header_links": [
+                {
+                    "name": "GitHub / Source",
+                    "link": "https://github.com/",
+                    "class": "gh-icon"
+                }
+            ],
+            "footer": "SGD-MCS | Maestría en Ciencias Sociales | Universidad de Córdoba",
+            "translations": {
+                "Home": "Inicio",
+                "Modules": "Módulos",
+                "Classes": "Clases",
+                "Namespaces": "Espacios de Nombres",
+                "Interfaces": "Interfaces",
+                "Global": "Global",
+                "Mixins": "Mixins",
+                "Tutorials": "Tutoriales",
+                "External": "Externos",
+                "Events": "Eventos"
+            }
+        }
+    },
+    "markdown": {
+        "hardwrap": false,
+        "idInHeadings": true
+    },
+    "templates": {
+        "cleverLinks": true,
+        "monospaceLinks": true,
+        "default": {
+            "staticFiles": {
+                "include": []
+            }
+        }
+    }
+}

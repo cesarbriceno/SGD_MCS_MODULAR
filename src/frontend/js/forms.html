@@ -1,141 +1,578 @@
 <script>
-    // ✅ NUEVA FUNCIÓN DE SEGURIDAD
+    /**
+     * Valida un formulario usando el método `checkValidity()` de Bootstrap. Si es inválido, muestra un mensaje de advertencia.
+     *
+     * @param {string} idForm - ID del formulario a validar.
+     * @returns {boolean} `true` si es válido, `false` de lo contrario.
+     */
     function validarFormulario(idForm) {
         const form = document.getElementById(idForm);
         if (!form.checkValidity()) {
-            // Esto hace que Bootstrap muestre los campos en rojo
-            form.classList.add('was-validated'); 
+            form.classList.add('was-validated');
             Swal.fire('Atención', 'Por favor completa los campos obligatorios marcados en rojo.', 'warning');
-            return false; // Detiene el proceso
+            return false;
         }
-        return true; // Todo correcto
+        return true;
     }
 
-    function enviarFormulario(id) { 
-        // Esta función se usa si se presiona Enter en un input
-        if(id==='form-estudiante') guardarEstudiante();
-        else if(id==='form-docente') guardarDocente(); 
-        else if(id==='form-externo') guardarExterno(); 
-        else if(id==='form-tesis') guardarTesis(); 
-        else if(id==='form-evento') guardarEvento(); 
-        else if(id==='form-institucion') guardarInstitucion();
+    /**
+     * Envía el formulario a la función `guardar` correspondiente según su ID.
+     *
+     * @param {string} id - ID del formulario.
+     */
+    function enviarFormulario(id) {
+        if (id === 'form-estudiante') guardarEstudiante();
+        else if (id === 'form-docente') guardarDocente();
+        else if (id === 'form-externo') guardarExterno();
+        else if (id === 'form-tesis') guardarTesis();
+        else if (id === 'form-evento') guardarEvento();
+        else if (id === 'form-institucion') guardarInstitucion();
     }
 
-    function abrirModalCrear() { 
-        document.querySelectorAll('form').forEach(f=>{
+    /**
+     * Abre el modal para crear un nuevo registro según el `moduloActual`. Reseteará formularios y estados de validación.
+     */
+    function abrirModalCrear() {
+        document.querySelectorAll('form').forEach(f => {
             f.reset();
-            f.classList.remove('was-validated'); // Limpiar rojos anteriores
+            f.classList.remove('was-validated');
         });
-        document.querySelectorAll('input[type="hidden"]').forEach(i=>i.value=''); 
-        
-        let modalId, firstTabId;
-        if(moduloActual==='estudiante') { modalId='modal-estudiante'; firstTabId='est-tab-ident'; toggleEstadoEstudiante(); toggleReingreso(); } 
-        else if(moduloActual==='docente') { modalId='modal-docente'; firstTabId='doc-tab-ident'; toggleDocenteActivo(); } 
-        else if(moduloActual==='externo') { modalId='modal-externo'; } 
-        else if(moduloActual==='tesis') { modalId='modal-tesis'; } 
-        else if(moduloActual==='evento') { 
-            modalId='modal-evento'; firstTabId='evt-tab-general'; 
-            ['estudiantes','docentes','externos','tesis','instituciones'].forEach(t => { const el = document.getElementById(`tbody-evt-${t}`); if(el) el.innerHTML=''; });
-        } 
-        else if(moduloActual==='institucion') { modalId='modal-institucion'; }
+        document.querySelectorAll('input[type="hidden"]').forEach(i => i.value = '');
 
-        if(modalId) {
+        let modalId, firstTabId;
+        if (moduloActual === 'estudiante') { modalId = 'modal-estudiante'; firstTabId = 'est-tab-ident'; toggleEstadoEstudiante(); toggleReingreso(); }
+        else if (moduloActual === 'docente') { modalId = 'modal-docente'; firstTabId = 'doc-tab-ident'; toggleDocenteActivo(); }
+        else if (moduloActual === 'externo') { modalId = 'modal-externo'; }
+        else if (moduloActual === 'tesis') { modalId = 'modal-tesis'; }
+        else if (moduloActual === 'evento') {
+            modalId = 'modal-evento'; firstTabId = 'evt-tab-general';
+            ['estudiantes', 'docentes', 'externos', 'tesis', 'instituciones'].forEach(t => { const el = document.getElementById(`tbody-evt-${t}`); if (el) el.innerHTML = ''; });
+        }
+        else if (moduloActual === 'institucion') { modalId = 'modal-institucion'; }
+
+        if (modalId) {
             const modalEl = document.getElementById(modalId);
             const modal = bootstrap.Modal.getOrCreateInstance(modalEl);
             modal.show();
-            if(firstTabId) { document.querySelector(`#${modalId} .nav-link[data-bs-target="#${firstTabId}"]`).classList.add('active'); document.getElementById(firstTabId).classList.add('show', 'active'); }
+            if (firstTabId) {
+                const triggerEl = document.querySelector(`#${modalId} .nav-link[data-bs-target="#${firstTabId}"]`);
+                if (triggerEl) bootstrap.Tab.getOrCreateInstance(triggerEl).show();
+            }
         }
     }
-    
+
+    /**
+     * Edita un registro individual cargando sus datos en el modal correspondiente.
+     *
+     * @param {string} mod - Tipo de módulo.
+     * @param {string|number} id - ID del registro a editar.
+     */
     function editarIndividual(mod, id) {
-        let d, modalId, dataKey, idKey;
+        let d;
         try {
-            const mapa = { 'estudiante': { key:'estudiantes', id:'ID_Estudiante', modal:'modal-estudiante' }, 'docente': { key:'docentes', id:'ID_Docente', modal:'modal-docente' }, 'externo': { key:'externos', id:'ID_Externo', modal:'modal-externo' }, 'tesis': { key:'tesis', id:'ID_Tesis', modal:'modal-tesis' }, 'evento': { key:'eventos', id:'ID_Evento', modal:'modal-evento' }, 'institucion': { key:'instituciones', id:'ID_Institucion', modal:'modal-institucion' } };
-            const conf = mapa[mod]; d = datosGlobales[conf.key].find(x => x[conf.id] === id);
-            
-            // Limpiar validaciones visuales al abrir editar
+            const mapa = { 'estudiante': { key: 'estudiantes', id: 'ID_Estudiante', modal: 'modal-estudiante' }, 'docente': { key: 'docentes', id: 'ID_Docente', modal: 'modal-docente' }, 'externo': { key: 'externos', id: 'ID_Externo', modal: 'modal-externo' }, 'tesis': { key: 'tesis', id: 'ID_Tesis', modal: 'modal-tesis' }, 'evento': { key: 'eventos', id: 'ID_Evento', modal: 'modal-evento' }, 'institucion': { key: 'instituciones', id: 'ID_Institucion', modal: 'modal-institucion' } };
+            const conf = mapa[mod]; d = datosGlobales[conf.key].find(x => String(x[conf.id]) === String(id));
+
             document.querySelectorAll('form').forEach(f => f.classList.remove('was-validated'));
 
-            if (mod === 'estudiante') { setVal('est-id-oculto', id); setVal('est-tipo-documento', d.Tipo_Documento); setVal('est-cedula', d.Cedula); setVal('est-lugar-exp', d.Lugar_Expedicion); setVal('est-apellido1', d.Apellido1); setVal('est-apellido2', d.Apellido2); setVal('est-nombre1', d.Nombre1); setVal('est-nombre2', d.Nombre2); setVal('est-sexo', d.Sexo); setVal('est-email', d.Email); setVal('est-telefono', d.Telefono); setVal('est-direccion', d.Direccion); setVal('est-ciudad', d.Ciudad); setVal('est-comentarios', d.Comentarios); setVal('est-fecha-ingreso', d.Fecha_Ingreso); setVal('est-cohorte-ingreso', d.Cohorte_Ingreso); setVal('est-estado', d.Estado); setVal('est-fecha-egreso', d.Fecha_Egreso); setVal('est-cohorte-egreso', d.Cohorte_Egreso); setVal('est-fecha-retiro', d.Fecha_Retiro); setVal('est-fecha-reingreso', d.Fecha_Reingreso); if(d.Reingreso==='Si') document.getElementById('reingresoSi').checked=true; setVal('est-sit-laboral', d.Situacion_Laboral_Actual); setVal('est-empresa', d.Empresa_Institucion); setVal('est-cargo', d.Cargo_Actual); setVal('est-sector', d.Sector_Desempeno); toggleEstadoEstudiante(); toggleReingreso(); } 
-            else if (mod === 'docente') { setVal('doc-id-oculto', id); setVal('doc-tipo-documento', d.Tipo_Documento); setVal('doc-cedula', d.Cedula); setVal('doc-lugar-exp', d.Lugar_Expedicion); setVal('doc-apellido1', d.Apellido1); setVal('doc-apellido2', d.Apellido2); setVal('doc-nombre1', d.Nombre1); setVal('doc-nombre2', d.Nombre2); setVal('doc-sexo', d.Sexo); setVal('doc-email', d.Email); setVal('doc-telefono', d.Telefono); setVal('doc-comentarios', d.Comentarios); setVal('doc-tipo-vinculacion', d.Tipo_Vinculacion); setVal('doc-fecha-vinculacion', d.Fecha_Vinculacion); setVal('doc-activo', d.Activo); setVal('doc-nivel-formacion', d.Nivel_Formacion); setVal('doc-especialidad', d.Especialidad); setVal('doc-categoria', d.Categoria); setVal('doc-link-cvlac', d.Link_CvLAC); setVal('doc-grupo-inv', d.Grupo_Investigacion); setVal('doc-linea-inv', d.Linea_Investigacion_Principal); setVal('doc-desvinculacion', d.Fecha_Desvinculacion); toggleDocenteActivo(); }
-            else if (mod === 'externo') { setVal('ext-id-oculto', id); setVal('ext-tipo-documento', d.Tipo_Documento); setVal('ext-documento', d.Numero_Documento); setVal('ext-lugar-exp', d.Lugar_Expedicion); setVal('ext-nombre1', d.Nombre1); setVal('ext-nombre2', d.Nombre2); setVal('ext-apellido1', d.Apellido1); setVal('ext-apellido2', d.Apellido2); setVal('ext-sexo', d.Sexo); setVal('ext-email', d.Email); setVal('ext-telefono', d.Telefono); setVal('ext-pais', d.Pais); setVal('ext-ciudad', d.Ciudad); setVal('ext-origen', d.Tipo_Origen); setVal('ext-organizacion', d.Organizacion); setVal('ext-cargo', d.Cargo_Perfil); }
-            else if (mod === 'evento') { setVal('evt-id-oculto', id); setVal('evt-nombre', d.Nombre_Evento); setVal('evt-tipo', d.Tipo_Evento); setVal('evt-alcance', d.Alcance); setVal('evt-modalidad', d.Modalidad); setVal('evt-anio', d.Año); setVal('evt-fecha-inicio', d.Fecha_Inicio); setVal('evt-fecha-fin', d.Fecha_Fin); setVal('evt-lugar', d.Lugar); setVal('evt-tipo-participacion', d.Tipo_Participacion); setVal('evt-cant-nacionales', d.Cantidad_Nacionales); setVal('evt-cant-internacionales', d.Cantidad_Internacionales); setVal('evt-perfil-externos', d.Perfil_Externos); cargarTablasVinculacion(d.IDs_Estudiantes_Asistentes, d.Rol_Estudiantes, 'estudiante'); cargarTablasVinculacion(d.IDs_Docentes_Participantes, d.Rol_Docentes, 'docente'); cargarTablasVinculacion(d.IDs_Externos_Participantes, d.Rol_Externos, 'externo'); cargarTablasVinculacion(d.IDs_Tesis_Vinculadas, null, 'tesis'); cargarTablasVinculacion(d.IDs_Instituciones, d.Rol_Instituciones, 'institucion'); setVal('evt-presupuesto', d.Presupuesto); setVal('evt-fuente-finan', d.Fuente_Financiacion); setVal('evt-descripcion', d.Descripcion); setVal('evt-impacto', d.Impacto_Academico); setVal('evt-url-evidencias', d.URL_Evidencias); }
-            else if (mod === 'tesis') { setVal('tes-id-oculto', id); setVal('tes-titulo', d.Titulo_Investigacion); setVal('tes-anio', d.Año); setVal('tes-estado', d.Estado_Tesis); setVal('tes-calificacion', d.Calificacion); setVal('tes-modalidad', d.Modalidad); setVal('tes-linea-inv', d.Linea_Investigacion_Tesis); setVal('tes-palabras-clave', d.Palabras_Clave); setVal('tes-resumen', d.Resumen); setVal('tes-id-estudiante', d.ID_Estudiante); setVal('tes-nombre-est', d.Nombre_Estudiante); setVal('tes-id-asesor', d.ID_Asesor); setVal('tes-nombre-asesor', d.Nombre_Asesor); setVal('tes-jurado1', d.Jurado_1); setVal('tes-jurado2', d.Jurado_2); setVal('tes-codirector', d.Codirector); setVal('tes-fecha-inicio', d.Fecha_Inicio); setVal('tes-fecha-defensa', d.Fecha_Defensa); setVal('tes-acta-sustentacion', d.Numero_Acta_Sustentacion); setVal('tes-url-documento', d.URL_Documento); }
-            else if (mod === 'institucion') { setVal('inst-id-oculto', id); setVal('inst-nombre', d.Nombre_Institucion); setVal('inst-sigla', d.Sigla); setVal('inst-tipo', d.Tipo); setVal('inst-pais', d.Pais); setVal('inst-ciudad', d.Ciudad); setVal('inst-contacto', d.Contacto_Principal); setVal('inst-web', d.URL_Web); setVal('inst-tipo-convenio', d.Tipo_Convenio); setVal('inst-fecha-firma', d.Fecha_Firma_Convenio); setVal('inst-vigente', d.Vigente); setVal('inst-activa', d.Activa); }
-            
+            if (mod === 'estudiante') {
+                setVal('est-id-oculto', id);
+                setVal('est-tipo-documento', d.Tipo_Documento);
+                setVal('est-cedula', d.Cedula);
+                setVal('est-lugar-exp', d.Lugar_Expedicion);
+                setVal('est-apellido1', d.Apellido1);
+                setVal('est-apellido2', d.Apellido2);
+                setVal('est-nombre1', d.Nombre1);
+                setVal('est-nombre2', d.Nombre2);
+                setVal('est-sexo', d.Sexo);
+                setVal('est-email', d.Email);
+                setVal('est-telefono', d.Telefono);
+                setVal('est-direccion', d.Direccion);
+                setVal('est-ciudad', d.Ciudad);
+                setVal('est-comentarios', d.Comentarios);
+                setVal('est-fecha-ingreso', d.Fecha_Ingreso);
+                setVal('est-cohorte-ingreso', d.Cohorte_Ingreso);
+                setVal('est-estado', d.Estado);
+                setVal('est-fecha-egreso', d.Fecha_Egreso);
+                setVal('est-cohorte-egreso', d.Cohorte_Egreso);
+                setVal('est-fecha-retiro', d.Fecha_Retiro);
+                setVal('est-fecha-reingreso', d.Fecha_Reingreso);
+                document.getElementById('reingresoSi').checked = (d.Reingreso === 'Si');
+                setVal('est-sit-laboral', d.Situacion_Laboral_Actual);
+                setVal('est-empresa', d.Empresa_Institucion);
+                setVal('est-cargo', d.Cargo_Actual);
+                setVal('est-sector', d.Sector_Desempeno);
+                toggleEstadoEstudiante();
+                toggleReingreso();
+            }
+            else if (mod === 'docente') {
+                setVal('doc-id-oculto', id);
+                setVal('doc-tipo-documento', d.Tipo_Documento);
+                setVal('doc-cedula', d.Cedula);
+                setVal('doc-lugar-exp', d.Lugar_Expedicion);
+                setVal('doc-apellido1', d.Apellido1);
+                setVal('doc-apellido2', d.Apellido2);
+                setVal('doc-nombre1', d.Nombre1);
+                setVal('doc-nombre2', d.Nombre2);
+                setVal('doc-sexo', d.Sexo);
+                setVal('doc-email', d.Email);
+                setVal('doc-telefono', d.Telefono);
+                setVal('doc-comentarios', d.Comentarios);
+                setVal('doc-tipo-vinculacion', d.Tipo_Vinculacion);
+                setVal('doc-fecha-vinculacion', d.Fecha_Vinculacion);
+                setVal('doc-activo', d.Activo);
+                setVal('doc-nivel-formacion', d.Nivel_Formacion);
+                setVal('doc-especialidad', d.Especialidad);
+                setVal('doc-categoria', d.Categoria);
+                setVal('doc-link-cvlac', d.Link_CvLAC);
+                setVal('doc-grupo-inv', d.Grupo_Investigacion);
+                setVal('doc-linea-inv', d.Linea_Investigacion_Principal);
+                setVal('doc-desvinculacion', d.Fecha_Desvinculacion);
+                toggleDocenteActivo();
+            }
+            else if (mod === 'externo') {
+                setVal('ext-id-oculto', id);
+                setVal('ext-tipo-documento', d.Tipo_Documento);
+                setVal('ext-documento', d.Numero_Documento);
+                setVal('ext-lugar-exp', d.Lugar_Expedicion);
+                setVal('ext-nombre1', d.Nombre1);
+                setVal('ext-nombre2', d.Nombre2);
+                setVal('ext-apellido1', d.Apellido1);
+                setVal('ext-apellido2', d.Apellido2);
+                setVal('ext-sexo', d.Sexo);
+                setVal('ext-email', d.Email);
+                setVal('ext-telefono', d.Telefono);
+                setVal('ext-pais', d.Pais);
+                setVal('ext-ciudad', d.Ciudad);
+                setVal('ext-origen', d.Tipo_Origen);
+                setVal('ext-organizacion', d.Organizacion);
+                setVal('ext-cargo', d.Cargo_Perfil);
+            }
+            else if (mod === 'evento') {
+                setVal('evt-id-oculto', id);
+                setVal('evt-nombre', d.Nombre_Evento);
+                setVal('evt-tipo', d.Tipo_Evento);
+                setVal('evt-alcance', d.Alcance);
+                setVal('evt-modalidad', d.Modalidad);
+                setVal('evt-anio', d.Año);
+                setVal('evt-fecha-inicio', d.Fecha_Inicio);
+                setVal('evt-fecha-fin', d.Fecha_Fin);
+                setVal('evt-lugar', d.Lugar);
+                setVal('evt-tipo-participacion', d.Tipo_Participacion);
+                setVal('evt-cant-nacionales', d.Cantidad_Nacionales);
+                setVal('evt-cant-internacionales', d.Cantidad_Internacionales);
+                setVal('evt-perfil-externos', d.Perfil_Externos);
+                cargarTablasVinculacion(d.IDs_Estudiantes_Asistentes, d.Rol_Estudiantes, 'estudiante');
+                cargarTablasVinculacion(d.IDs_Docentes_Participantes, d.Rol_Docentes, 'docente');
+                cargarTablasVinculacion(d.IDs_Externos_Participantes, d.Rol_Externos, 'externo');
+                cargarTablasVinculacion(d.IDs_Tesis_Vinculadas, null, 'tesis');
+                cargarTablasVinculacion(d.IDs_Instituciones, d.Rol_Instituciones, 'institucion');
+                setVal('evt-presupuesto', d.Presupuesto);
+                setVal('evt-fuente-finan', d.Fuente_Financiacion);
+                setVal('evt-descripcion', d.Descripcion);
+                setVal('evt-impacto', d.Impacto_Academico);
+                setVal('evt-url-evidencias', d.URL_Evidencias);
+            }
+            else if (mod === 'tesis') {
+                setVal('tes-id-oculto', id);
+                setVal('tes-titulo', d.Titulo_Investigacion);
+                setVal('tes-anio', d.Año);
+                setVal('tes-estado', d.Estado_Tesis);
+                setVal('tes-calificacion', d.Calificacion);
+                setVal('tes-modalidad', d.Modalidad);
+                setVal('tes-linea-inv', d.Linea_Investigacion_Tesis);
+                setVal('tes-palabras-clave', d.Palabras_Clave);
+                setVal('tes-resumen', d.Resumen);
+                setVal('tes-id-estudiante', d.ID_Estudiante);
+                setVal('tes-nombre-est', d.Nombre_Estudiante);
+                setVal('tes-id-asesor', d.ID_Asesor);
+                setVal('tes-nombre-asesor', d.Nombre_Asesor);
+                setVal('tes-jurado1', d.Jurado_1);
+                setVal('tes-jurado2', d.Jurado_2);
+                setVal('tes-codirector', d.Codirector);
+                setVal('tes-fecha-inicio', d.Fecha_Inicio);
+                setVal('tes-fecha-defensa', d.Fecha_Defensa);
+                setVal('tes-acta-sustentacion', d.Numero_Acta_Sustentacion);
+                setVal('tes-url-documento', d.URL_Documento);
+            }
+            else if (mod === 'institucion') {
+                setVal('inst-id-oculto', id);
+                setVal('inst-nombre', d.Nombre_Institucion);
+                setVal('inst-sigla', d.Sigla);
+                setVal('inst-tipo', d.Tipo);
+                setVal('inst-pais', d.Pais);
+                setVal('inst-ciudad', d.Ciudad);
+                setVal('inst-contacto', d.Contacto_Principal);
+                setVal('inst-web', d.URL_Web);
+                setVal('inst-tipo-convenio', d.Tipo_Convenio);
+                setVal('inst-fecha-firma', d.Fecha_Firma_Convenio);
+                setVal('inst-vigente', d.Vigente);
+                setVal('inst-activa', d.Activa);
+            }
+
             const modalEl = document.getElementById(conf.modal);
-            const oldInstance = bootstrap.Modal.getInstance(modalEl); if (oldInstance) oldInstance.dispose(); 
-            const newModal = new bootstrap.Modal(modalEl, { backdrop: 'static', keyboard: false });
-            newModal.show();
+            const modal = bootstrap.Modal.getOrCreateInstance(modalEl);
+            modal.show();
         } catch (error) { console.error(error); Swal.fire('Error', 'No se pudieron cargar los datos.', 'error'); }
     }
 
-    // Funciones de Guardado CON VALIDACIÓN PREVIA
-    function guardarEstudiante() { 
-        if(!validarFormulario('form-estudiante')) return; // 🛑 ALTO SI NO ES VÁLIDO
-        const d={ Tipo_Documento:val('est-tipo-documento'), Cedula:val('est-cedula'), Lugar_Expedicion:val('est-lugar-exp'), Apellido1:val('est-apellido1'), Apellido2:val('est-apellido2'), Nombre1:val('est-nombre1'), Nombre2:val('est-nombre2'), Sexo:val('est-sexo'), Email:val('est-email'), Telefono:val('est-telefono'), Direccion:val('est-direccion'), Ciudad:val('est-ciudad'), Comentarios:val('est-comentarios'), Fecha_Ingreso:val('est-fecha-ingreso'), Cohorte_Ingreso:val('est-cohorte-ingreso'), Estado:val('est-estado'), Fecha_Egreso:val('est-fecha-egreso'), Cohorte_Egreso:val('est-cohorte-egreso'), Fecha_Retiro:val('est-fecha-retiro'), Reingreso:document.querySelector('input[name="radioReingreso"]:checked').value, Fecha_Reingreso:val('est-fecha-reingreso'), Situacion_Laboral_Actual:val('est-sit-laboral'), Empresa_Institucion:val('est-empresa'), Cargo_Actual:val('est-cargo'), Sector_Desempeno:val('est-sector') }; 
-        procesar(val('est-id-oculto'), 'Estudiante', d); 
-    }
-    function guardarDocente() { 
-        if(!validarFormulario('form-docente')) return; // 🛑
-        const d={ Tipo_Documento:val('doc-tipo-documento'), Cedula:val('doc-cedula'), Lugar_Expedicion:val('doc-lugar-exp'), Apellido1:val('doc-apellido1'), Apellido2:val('doc-apellido2'), Nombre1:val('doc-nombre1'), Nombre2:val('doc-nombre2'), Sexo:val('doc-sexo'), Email:val('doc-email'), Telefono:val('doc-telefono'), Comentarios:val('doc-comentarios'), Tipo_Vinculacion:val('doc-tipo-vinculacion'), Activo:val('doc-activo'), Fecha_Vinculacion:val('doc-fecha-vinculacion'), Fecha_Desvinculacion:val('doc-desvinculacion'), Nivel_Formacion:val('doc-nivel-formacion'), Especialidad:val('doc-especialidad'), Categoria:val('doc-categoria'), Link_CvLAC:val('doc-link-cvlac'), Grupo_Investigacion:val('doc-grupo-inv'), Linea_Investigacion_Principal:val('doc-linea-inv') }; 
-        procesar(val('doc-id-oculto'), 'Docente', d); 
-    }
-    function guardarExterno() { 
-        if(!validarFormulario('form-externo')) return; // 🛑
-        const d={ Tipo_Documento:val('ext-tipo-documento'), Numero_Documento:val('ext-documento'), Lugar_Expedicion:val('ext-lugar-exp'), Nombre1:val('ext-nombre1'), Nombre2:val('ext-nombre2'), Apellido1:val('ext-apellido1'), Apellido2:val('ext-apellido2'), Sexo:val('ext-sexo'), Email:val('ext-email'), Telefono:val('ext-telefono'), Pais:val('ext-pais'), Ciudad:val('ext-ciudad'), Tipo_Origen:val('ext-origen'), Organizacion:val('ext-organizacion'), Cargo_Perfil:val('ext-cargo') }; 
-        procesar(val('ext-id-oculto'), 'Externo', d); 
-    }
-    function guardarTesis(){ 
-        // No hay validación estricta aquí pero se puede agregar si quieres
-        const d={ Titulo_Investigacion:val('tes-titulo'), Año:val('tes-anio'), Estado_Tesis:val('tes-estado'), Calificacion:val('tes-calificacion'), Modalidad:val('tes-modalidad'), Linea_Investigacion_Tesis:val('tes-linea-inv'), Palabras_Clave:val('tes-palabras-clave'), Resumen:val('tes-resumen'), ID_Estudiante:val('tes-id-estudiante'), Nombre_Estudiante:val('tes-nombre-est'), ID_Asesor:val('tes-id-asesor'), Nombre_Asesor:val('tes-nombre-asesor'), Codirector:val('tes-codirector'), Jurado_1:val('tes-jurado1'), Jurado_2:val('tes-jurado2'), Fecha_Inicio:val('tes-fecha-inicio'), Fecha_Defensa:val('tes-fecha-defensa'), Numero_Acta_Sustentacion:val('tes-acta-sustentacion'), URL_Documento:val('tes-url-documento') }; 
-        procesar(val('tes-id-oculto'), 'Tesis', d); 
-    }
-    function guardarEvento(){ 
-        if(!validarFormulario('form-evento')) return; // 🛑
-        const est = recolectarDatosTabla('estudiante'); const doc = recolectarDatosTabla('docente'); const ext = recolectarDatosTabla('externo'); const tes = recolectarDatosTabla('tesis'); const inst = recolectarDatosTabla('institucion'); const d={ Nombre_Evento:val('evt-nombre'), Tipo_Evento:val('evt-tipo'), Alcance:val('evt-alcance'), Modalidad:val('evt-modalidad'), Lugar:val('evt-lugar'), Fecha_Inicio:val('evt-fecha-inicio'), Fecha_Fin:val('evt-fecha-fin'), Año:val('evt-anio'), Tipo_Participacion:val('evt-tipo-participacion'), IDs_Estudiantes_Asistentes: est.ids, Rol_Estudiantes: est.roles, IDs_Docentes_Participantes: doc.ids, Rol_Docentes: doc.roles, IDs_Externos_Participantes: ext.ids, Rol_Externos: ext.roles, IDs_Tesis_Vinculadas: tes.ids, IDs_Instituciones: inst.ids, Rol_Instituciones: inst.roles, Cantidad_Nacionales: val('evt-cant-nacionales'), Cantidad_Internacionales: val('evt-cant-internacionales'), Perfil_Externos: val('evt-perfil-externos'), Presupuesto:val('evt-presupuesto'), Fuente_Financiacion:val('evt-fuente-finan'), Descripcion:val('evt-descripcion'), Impacto_Academico:val('evt-impacto'), URL_Evidencias:val('evt-url-evidencias') }; 
-        procesar(val('evt-id-oculto'), 'Evento', d); 
-    }
-    function guardarInstitucion(){ 
-        if(!validarFormulario('form-institucion')) return; // 🛑
-        const d = { Nombre_Institucion: val('inst-nombre'), Sigla: val('inst-sigla'), Tipo: val('inst-tipo'), Pais: val('inst-pais'), Ciudad: val('inst-ciudad'), Contacto_Principal: val('inst-contacto'), Tipo_Convenio: val('inst-tipo-convenio'), Fecha_Firma_Convenio: val('inst-fecha-firma'), Vigente: val('inst-vigente'), URL_Web: val('inst-web'), Activa: val('inst-activa') }; 
-        procesar(val('inst-id-oculto'), 'Institucion', d); 
+    /**
+     * Guarda los datos del estudiante. Valida el formulario, recolecta datos y llama a `procesar`.
+     */
+    function guardarEstudiante() {
+        if (!validarFormulario('form-estudiante')) return;
+        const d = {
+            Tipo_Documento: val('est-tipo-documento'),
+            Cedula: val('est-cedula'),
+            Lugar_Expedicion: val('est-lugar-exp'),
+            Apellido1: val('est-apellido1'),
+            Apellido2: val('est-apellido2'),
+            Nombre1: val('est-nombre1'),
+            Nombre2: val('est-nombre2'),
+            Sexo: val('est-sexo'),
+            Email: val('est-email'),
+            Telefono: val('est-telefono'),
+            Direccion: val('est-direccion'),
+            Ciudad: val('est-ciudad'),
+            Comentarios: val('est-comentarios'),
+            Fecha_Ingreso: val('est-fecha-ingreso'),
+            Cohorte_Ingreso: val('est-cohorte-ingreso'),
+            Estado: val('est-estado'),
+            Fecha_Egreso: val('est-fecha-egreso'),
+            Cohorte_Egreso: val('est-cohorte-egreso'),
+            Fecha_Retiro: val('est-fecha-retiro'),
+            Reingreso: document.querySelector('input[name="radioReingreso"]:checked').value,
+            Fecha_Reingreso: val('est-fecha-reingreso'),
+            Situacion_Laboral_Actual: val('est-sit-laboral'),
+            Empresa_Institucion: val('est-empresa'),
+            Cargo_Actual: val('est-cargo'),
+            Sector_Desempeno: val('est-sector')
+        };
+        procesar(val('est-id-oculto'), 'Estudiante', d);
     }
 
-    function procesar(id, tipo, d) { mostrarLoader(true); if (id) { d.ID = id; } google.script.run.withSuccessHandler(cb).withFailureHandler(err).guardarDatos(tipo, d); }
+    /**
+     * Guarda los datos del docente.
+     */
+    function guardarDocente() {
+        if (!validarFormulario('form-docente')) return;
+        const d = {
+            Tipo_Documento: val('doc-tipo-documento'),
+            Cedula: val('doc-cedula'),
+            Lugar_Expedicion: val('doc-lugar-exp'),
+            Apellido1: val('doc-apellido1'),
+            Apellido2: val('doc-apellido2'),
+            Nombre1: val('doc-nombre1'),
+            Nombre2: val('doc-nombre2'),
+            Sexo: val('doc-sexo'),
+            Email: val('doc-email'),
+            Telefono: val('doc-telefono'),
+            Comentarios: val('doc-comentarios'),
+            Tipo_Vinculacion: val('doc-tipo-vinculacion'),
+            Activo: val('doc-activo'),
+            Fecha_Vinculacion: val('doc-fecha-vinculacion'),
+            Fecha_Desvinculacion: val('doc-desvinculacion'),
+            Nivel_Formacion: val('doc-nivel-formacion'),
+            Especialidad: val('doc-especialidad'),
+            Categoria: val('doc-categoria'),
+            Link_CvLAC: val('doc-link-cvlac'),
+            Grupo_Investigacion: val('doc-grupo-inv'),
+            Linea_Investigacion_Principal: val('doc-linea-inv')
+        };
+        procesar(val('doc-id-oculto'), 'Docente', d);
+    }
 
-    function agregarFilaVinculo(tipo, idPre='', rolPre='') { const mapa = { 'estudiante':'estudiantes', 'docente':'docentes', 'externo':'externos', 'tesis':'tesis', 'institucion':'instituciones' }; const key = mapa[tipo]; const tbody = document.getElementById(`tbody-evt-${key}`); if (!tbody) return; const rowId = Date.now() + Math.floor(Math.random()*1000); let opciones = '<option value="">...</option>'; datosGlobales[key].forEach(x => { let id = x.ID_Estudiante || x.ID_Docente || x.ID_Externo || x.ID_Tesis || x.ID_Institucion; let label = ''; if(tipo==='tesis') label = x.Titulo_Investigacion.substring(0,50)+'...'; else if(tipo==='externo') label = `${x.Nombre1} ${x.Apellido1} (${x.Organizacion})`; else if(tipo==='institucion') label = x.Nombre_Institucion; else label = `${x.Apellido1} ${x.Nombre1}`; const sel = String(id) === String(idPre) ? 'selected' : ''; opciones += `<option value="${id}" ${sel}>${label}</option>`; }); const inputRol = tipo !== 'tesis' ? `<input type="text" class="form-control form-control-sm rol-input" placeholder="Rol" value="${rolPre}">` : ''; tbody.insertAdjacentHTML('beforeend', `<tr id="row-${rowId}"><td><select class="form-select form-select-sm id-select">${opciones}</select></td><td>${inputRol}</td><td class="text-end"><button type="button" class="btn btn-sm text-danger" onclick="document.getElementById('row-${rowId}').remove()"><i class="fas fa-times"></i></button></td></tr>`); }
-    function recolectarDatosTabla(tipo) { const mapa = { 'estudiante':'estudiantes', 'docente':'docentes', 'externo':'externos', 'tesis':'tesis', 'institucion':'instituciones' }; const tbody = document.getElementById(`tbody-evt-${mapa[tipo]}`); if (!tbody) return { ids:'', roles:'' }; let ids=[], roles=[]; tbody.querySelectorAll('tr').forEach(tr => { const id = tr.querySelector('.id-select').value; if(id) { ids.push(id); if(tipo !== 'tesis') roles.push(tr.querySelector('.rol-input').value || 'Participante'); } }); return { ids: ids.join(','), roles: roles.join(',') }; }
-    function cargarTablasVinculacion(idsStr, rolesStr, tipo) { const mapa = { 'estudiante':'estudiantes', 'docente':'docentes', 'externo':'externos', 'tesis':'tesis', 'institucion':'instituciones' }; const tbody = document.getElementById(`tbody-evt-${mapa[tipo]}`); if(tbody) tbody.innerHTML = ''; if(!idsStr) return; const ids = String(idsStr).split(','); const roles = rolesStr ? String(rolesStr).split(',') : []; ids.forEach((id, i) => { if(id.trim()) agregarFilaVinculo(tipo, id.trim(), roles[i]||''); }); }
+    /**
+     * Guarda los datos de un participante externo.
+     */
+    function guardarExterno() {
+        if (!validarFormulario('form-externo')) return;
+        const d = {
+            Tipo_Documento: val('ext-tipo-documento'),
+            Numero_Documento: val('ext-documento'),
+            Lugar_Expedicion: val('ext-lugar-exp'),
+            Nombre1: val('ext-nombre1'),
+            Nombre2: val('ext-nombre2'),
+            Apellido1: val('ext-apellido1'),
+            Apellido2: val('ext-apellido2'),
+            Sexo: val('ext-sexo'),
+            Email: val('ext-email'),
+            Telefono: val('ext-telefono'),
+            Pais: val('ext-pais'),
+            Ciudad: val('ext-ciudad'),
+            Tipo_Origen: val('ext-origen'),
+            Organizacion: val('ext-organizacion'),
+            Cargo_Perfil: val('ext-cargo')
+        };
+        procesar(val('ext-id-oculto'), 'Externo', d);
+    }
 
-    function abrirModalMasivo() { if(seleccionados.size === 0) return Swal.fire('Aviso', 'Selecciona registros.', 'warning'); document.getElementById('form-masivo').reset(); document.querySelectorAll('#modal-masivo .condicional-box').forEach(el => el.style.display = 'none'); const modalEl = document.getElementById('modal-masivo'); const modal = bootstrap.Modal.getOrCreateInstance(modalEl); modal.show(); }
-    function toggleMasivoEstado() { const v = document.getElementById('masivo-estado').value; document.querySelectorAll('#modal-masivo .condicional-box').forEach(el => el.style.display = 'none'); if(v==='Activo') document.getElementById('div-masivo-activo').style.display='block'; else if(v==='Graduado') document.getElementById('div-masivo-graduado').style.display='block'; else if(v==='Retirado') document.getElementById('div-masivo-retirado').style.display='block'; }
-    function ejecutarEdicionMasiva() { const estado = document.getElementById('masivo-estado').value; const datos = {};
-        if(estado) {
-            if(moduloActual === 'docente') datos.Activo = (estado==='Activo'?'Sí':'No');
+    /**
+     * Guarda los datos de una tesis.
+     */
+    function guardarTesis() {
+        if (!validarFormulario('form-tesis')) return;
+        const d = {
+            Titulo_Investigacion: val('tes-titulo'),
+            Año: val('tes-anio'),
+            Estado_Tesis: val('tes-estado'),
+            Calificacion: val('tes-calificacion'),
+            Modalidad: val('tes-modalidad'),
+            Linea_Investigacion_Tesis: val('tes-linea-inv'),
+            Palabras_Clave: val('tes-palabras-clave'),
+            Resumen: val('tes-resumen'),
+            ID_Estudiante: val('tes-id-estudiante'),
+            Nombre_Estudiante: val('tes-nombre-est'),
+            ID_Asesor: val('tes-id-asesor'),
+            Nombre_Asesor: val('tes-nombre-asesor'),
+            Codirector: val('tes-codirector'),
+            Jurado_1: val('tes-jurado1'),
+            Jurado_2: val('tes-jurado2'),
+            Fecha_Inicio: val('tes-fecha-inicio'),
+            Fecha_Defensa: val('tes-fecha-defensa'),
+            Numero_Acta_Sustentacion: val('tes-acta-sustentacion'),
+            URL_Documento: val('tes-url-documento')
+        };
+        procesar(val('tes-id-oculto'), 'Tesis', d);
+    }
+
+    /**
+     * Guarda los datos de un evento, incluyendo vinculaciones con otras entidades.
+     */
+    function guardarEvento() {
+        if (!validarFormulario('form-evento')) return;
+        const est = recolectarDatosTabla('estudiante');
+        const doc = recolectarDatosTabla('docente');
+        const ext = recolectarDatosTabla('externo');
+        const tes = recolectarDatosTabla('tesis');
+        const inst = recolectarDatosTabla('institucion');
+        const d = {
+            Nombre_Evento: val('evt-nombre'),
+            Tipo_Evento: val('evt-tipo'),
+            Alcance: val('evt-alcance'),
+            Modalidad: val('evt-modalidad'),
+            Lugar: val('evt-lugar'),
+            Fecha_Inicio: val('evt-fecha-inicio'),
+            Fecha_Fin: val('evt-fecha-fin'),
+            Año: val('evt-anio'),
+            Tipo_Participacion: val('evt-tipo-participacion'),
+            IDs_Estudiantes_Asistentes: est.ids,
+            Rol_Estudiantes: est.roles,
+            IDs_Docentes_Participantes: doc.ids,
+            Rol_Docentes: doc.roles,
+            IDs_Externos_Participantes: ext.ids,
+            Rol_Externos: ext.roles,
+            IDs_Tesis_Vinculadas: tes.ids,
+            IDs_Instituciones: inst.ids,
+            Rol_Instituciones: inst.roles,
+            Cantidad_Nacionales: val('evt-cant-nacionales'),
+            Cantidad_Internacionales: val('evt-cant-internacionales'),
+            Perfil_Externos: val('evt-perfil-externos'),
+            Presupuesto: val('evt-presupuesto'),
+            Fuente_Financiacion: val('evt-fuente-finan'),
+            Descripcion: val('evt-descripcion'),
+            Impacto_Academico: val('evt-impacto'),
+            URL_Evidencias: val('evt-url-evidencias')
+        };
+        procesar(val('evt-id-oculto'), 'Evento', d);
+    }
+
+    /**
+     * Guarda los datos de una institución.
+     */
+    function guardarInstitucion() {
+        if (!validarFormulario('form-institucion')) return;
+        const d = {
+            Nombre_Institucion: val('inst-nombre'),
+            Sigla: val('inst-sigla'),
+            Tipo: val('inst-tipo'),
+            Pais: val('inst-pais'),
+            Ciudad: val('inst-ciudad'),
+            Contacto_Principal: val('inst-contacto'),
+            Tipo_Convenio: val('inst-tipo-convenio'),
+            Fecha_Firma_Convenio: val('inst-fecha-firma'),
+            Vigente: val('inst-vigente'),
+            URL_Web: val('inst-web'),
+            Activa: val('inst-activa')
+        };
+        procesar(val('inst-id-oculto'), 'Institucion', d);
+    }
+
+    /**
+     * Procesa los datos para guardar o actualizar. Llama a `google.script.run.guardarDatos`.
+     *
+     * @param {string|number} id - ID del registro si es actualización, de lo contrario vacío.
+     * @param {string} tipo - Tipo de dato (ej. 'Estudiante').
+     * @param {object} d - Objeto con los datos.
+     */
+    function procesar(id, tipo, d) {
+        mostrarLoader(true);
+        if (id) { d.ID = id; }
+        google.script.run.withSuccessHandler(cb).withFailureHandler(err).guardarDatos(tipo, d);
+    }
+
+    /**
+     * Añade una nueva fila para vincular entidades a un evento.
+     *
+     * @param {string} tipo - Tipo de entidad ('estudiante', 'docente', etc).
+     * @param {string} idPre - ID pre-seleccionado.
+     * @param {string} rolPre - Rol pre-definido.
+     */
+    function agregarFilaVinculo(tipo, idPre = '', rolPre = '') {
+        const mapa = { 'estudiante': 'estudiantes', 'docente': 'docentes', 'externo': 'externos', 'tesis': 'tesis', 'institucion': 'instituciones' };
+        const key = mapa[tipo];
+        const tbody = document.getElementById(`tbody-evt-${key}`);
+        if (!tbody) return;
+        const rowId = Date.now() + Math.floor(Math.random() * 1000);
+        let opciones = '<option value="">...</option>';
+        datosGlobales[key].forEach(x => {
+            let id = x.ID_Estudiante || x.ID_Docente || x.ID_Externo || x.ID_Tesis || x.ID_Institucion;
+            let label = '';
+            if (tipo === 'tesis') label = x.Titulo_Investigacion.substring(0, 50) + '...';
+            else if (tipo === 'externo') label = `${x.Nombre1} ${x.Apellido1} (${x.Organizacion})`;
+            else if (tipo === 'institucion') label = x.Nombre_Institucion;
+            else label = `${x.Apellido1} ${x.Nombre1}`;
+            const sel = String(id) === String(idPre) ? 'selected' : '';
+            opciones += `<option value="${id}" ${sel}>${label}</option>`;
+        });
+        const inputRol = tipo !== 'tesis' ? `<input type="text" class="form-control form-control-sm rol-input" placeholder="Rol" value="${rolPre}">` : '';
+        tbody.insertAdjacentHTML('beforeend', `<tr id="row-${rowId}"><td><select class="form-select form-select-sm id-select">${opciones}</select></td><td>${inputRol}</td><td class="text-end"><button type="button" class="btn btn-sm text-danger" onclick="document.getElementById('row-${rowId}').remove()"><i class="fas fa-times"></i></button></td></tr>`);
+    }
+
+    /**
+     * Recolecta IDs y roles de una tabla de vinculación de un evento.
+     *
+     * @param {string} tipo - Tipo de entidad.
+     * @returns {object} Objeto con `ids` y `roles` como cadenas separadas por comas.
+     */
+    function recolectarDatosTabla(tipo) {
+        const mapa = { 'estudiante': 'estudiantes', 'docente': 'docentes', 'externo': 'externos', 'tesis': 'tesis', 'institucion': 'instituciones' };
+        const tbody = document.getElementById(`tbody-evt-${mapa[tipo]}`);
+        if (!tbody) return { ids: '', roles: '' };
+        let ids = [], roles = [];
+        tbody.querySelectorAll('tr').forEach(tr => {
+            const id = tr.querySelector('.id-select').value;
+            if (id) {
+                ids.push(id);
+                if (tipo !== 'tesis') roles.push(tr.querySelector('.rol-input').value || 'Participante');
+            }
+        });
+        return { ids: ids.join(','), roles: roles.join(',') };
+    }
+
+    /**
+     * Carga y puebla las tablas de vinculación basadas en IDs y roles existentes.
+     *
+     * @param {string} idsStr - IDs separados por comas.
+     * @param {string} rolesStr - Roles separados por comas.
+     * @param {string} tipo - Tipo de entidad.
+     */
+    function cargarTablasVinculacion(idsStr, rolesStr, tipo) {
+        const mapa = { 'estudiante': 'estudiantes', 'docente': 'docentes', 'externo': 'externos', 'tesis': 'tesis', 'institucion': 'instituciones' };
+        const tbody = document.getElementById(`tbody-evt-${mapa[tipo]}`);
+        if (tbody) tbody.innerHTML = '';
+        if (!idsStr) return;
+        const ids = String(idsStr).split(',');
+        const roles = rolesStr ? String(rolesStr).split(',') : [];
+        ids.forEach((id, i) => { if (id.trim()) agregarFilaVinculo(tipo, id.trim(), roles[i] || ''); });
+    }
+
+    /**
+     * Abre el modal de edición masiva. Verifica que haya registros seleccionados.
+     */
+    function abrirModalMasivo() {
+        if (seleccionados.size === 0) return Swal.fire('Aviso', 'Selecciona registros.', 'warning');
+        document.getElementById('form-masivo').reset();
+        document.querySelectorAll('#modal-masivo .condicional-box').forEach(el => el.style.display = 'none');
+        const modalEl = document.getElementById('modal-masivo');
+        const modal = bootstrap.Modal.getOrCreateInstance(modalEl);
+        modal.show();
+    }
+
+    /**
+     * Alterna la visibilidad de los campos condicionales en el modal masivo.
+     */
+    function toggleMasivoEstado() {
+        const v = document.getElementById('masivo-estado').value;
+        document.querySelectorAll('#modal-masivo .condicional-box').forEach(el => el.style.display = 'none');
+        if (v === 'Activo') document.getElementById('div-masivo-activo').style.display = 'block';
+        else if (v === 'Graduado') document.getElementById('div-masivo-graduado').style.display = 'block';
+        else if (v === 'Retirado') document.getElementById('div-masivo-retirado').style.display = 'block';
+    }
+
+    /**
+     * Ejecuta una operación de edición masiva en los registros seleccionados.
+     */
+    function ejecutarEdicionMasiva() {
+        const estado = document.getElementById('masivo-estado').value;
+        const datos = {};
+        if (estado) {
+            if (moduloActual === 'docente') datos.Activo = (estado === 'Activo' ? 'Sí' : 'No');
             else datos.Estado = estado;
-            if(estado==='Activo') { if(val('masivo-es-reingreso')) datos.Reingreso = val('masivo-es-reingreso'); if(val('masivo-fecha-reingreso')) datos.Fecha_Reingreso = val('masivo-fecha-reingreso'); } 
-            else if(estado==='Graduado') { if(val('masivo-fecha-egreso')) datos.Fecha_Egreso = val('masivo-fecha-egreso'); if(val('masivo-cohorte-egreso')) datos.Cohorte_Egreso = val('masivo-cohorte-egreso'); } 
-            else if(estado==='Retirado') { if(val('masivo-fecha-retiro')) datos.Fecha_Retiro = val('masivo-fecha-retiro'); } 
+            if (estado === 'Activo') {
+                if (val('masivo-es-reingreso')) datos.Reingreso = val('masivo-es-reingreso');
+                if (val('masivo-fecha-reingreso')) datos.Fecha_Reingreso = val('masivo-fecha-reingreso');
+            }
+            else if (estado === 'Graduado') {
+                if (val('masivo-fecha-egreso')) datos.Fecha_Egreso = val('masivo-fecha-egreso');
+                if (val('masivo-cohorte-egreso')) datos.Cohorte_Egreso = val('masivo-cohorte-egreso');
+            }
+            else if (estado === 'Retirado') {
+                if (val('masivo-fecha-retiro')) datos.Fecha_Retiro = val('masivo-fecha-retiro');
+            }
         }
-        if(val('masivo-cohorte')) datos.Cohorte_Ingreso = val('masivo-cohorte'); 
-        if(val('masivo-ciudad')) datos.Ciudad = val('masivo-ciudad');
-        // CAMPOS NUEVOS
-        if(val('masivo-email')) datos.Email = val('masivo-email');
-        if(val('masivo-telefono')) datos.Telefono = val('masivo-telefono');
-        if(val('masivo-direccion')) datos.Direccion = val('masivo-direccion');
-        if(val('masivo-situacion')) datos.Situacion_Laboral_Actual = val('masivo-situacion');
-        if(val('masivo-empresa')) datos.Empresa_Institucion = val('masivo-empresa');
-        if(val('masivo-cargo')) datos.Cargo_Actual = val('masivo-cargo');
-        if(val('masivo-sector')) datos.Sector_Desempeno = val('masivo-sector');
-        if(val('masivo-comentarios')) datos.Comentarios = val('masivo-comentarios');
-        
-        if(Object.keys(datos).length===0) return Swal.fire('Aviso', 'No hay cambios.', 'warning');
-        
-        mostrarLoader(true); 
-        google.script.run.withSuccessHandler(cb).actualizarMasivo(moduloActual+'s', Array.from(seleccionados), datos); 
+        if (val('masivo-cohorte')) datos.Cohorte_Ingreso = val('masivo-cohorte');
+        if (val('masivo-ciudad')) datos.Ciudad = val('masivo-ciudad');
+        if (val('masivo-email')) datos.Email = val('masivo-email');
+        if (val('masivo-telefono')) datos.Telefono = val('masivo-telefono');
+        if (val('masivo-direccion')) datos.Direccion = val('masivo-direccion');
+        if (val('masivo-situacion')) datos.Situacion_Laboral_Actual = val('masivo-situacion');
+        if (val('masivo-empresa')) datos.Empresa_Institucion = val('masivo-empresa');
+        if (val('masivo-cargo')) datos.Cargo_Actual = val('masivo-cargo');
+        if (val('masivo-sector')) datos.Sector_Desempeno = val('masivo-sector');
+        if (val('masivo-comentarios')) datos.Comentarios = val('masivo-comentarios');
+
+        if (Object.keys(datos).length === 0) return Swal.fire('Aviso', 'No hay cambios.', 'warning');
+
+        mostrarLoader(true);
+        google.script.run.withSuccessHandler(cb).actualizarMasivo(moduloActual + 's', Array.from(seleccionados), datos);
     }
-    
-    function eliminarIndividual(modulo, id) { Swal.fire({ title: '¿Estás seguro?', text: `Eliminar: ${id}`, icon: 'warning', showCancelButton: true, confirmButtonColor: '#d33', confirmButtonText: 'Sí, eliminar' }).then((result) => { if (result.isConfirmed) { mostrarLoader(true); google.script.run.withSuccessHandler(cb).withFailureHandler(err).eliminarMasivo(modulo + 's', [id]); } }); }
-    function confirmarEliminacionMasiva(){ Swal.fire({title:'¿Borrar Varios?',icon:'warning',showCancelButton:true}).then(r=>{if(r.isConfirmed) {mostrarLoader(true); google.script.run.withSuccessHandler(cb).eliminarMasivo(moduloActual+'s',Array.from(seleccionados)); }}); }
+
+    /**
+     * Elimina un registro individual tras confirmación.
+     *
+     * @param {string} modulo - Tipo de módulo.
+     * @param {string|number} id - ID del registro a eliminar.
+     */
+    function eliminarIndividual(modulo, id) {
+        Swal.fire({
+            title: '¿Estás seguro?',
+            text: `Eliminar: ${id}`,
+            icon: 'warning',
+            showCancelButton: true,
+            confirmButtonColor: '#d33',
+            confirmButtonText: 'Sí, eliminar'
+        }).then((result) => {
+            if (result.isConfirmed) {
+                mostrarLoader(true);
+                google.script.run.withSuccessHandler(cb).withFailureHandler(err).eliminarMasivo(modulo + 's', [id]);
+            }
+        });
+    }
+
+    /**
+     * Confirma y ejecuta la eliminación masiva de los registros seleccionados.
+     */
+    function confirmarEliminacionMasiva() {
+        Swal.fire({
+            title: '¿Borrar Varios?',
+            icon: 'warning',
+            showCancelButton: true
+        }).then(r => {
+            if (r.isConfirmed) {
+                mostrarLoader(true);
+                google.script.run.withSuccessHandler(cb).eliminarMasivo(moduloActual + 's', Array.from(seleccionados));
+            }
+        });
+    }
 </script>

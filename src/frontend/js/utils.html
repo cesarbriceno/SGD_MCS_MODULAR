@@ -1,40 +1,47 @@
 <script>
-    // ==========================================
-    // 1. CARGA INICIAL DE DATOS
-    // ==========================================
+    let datosGlobales = {};
+    let seleccionados = new Set();
+    let moduloActual = '';
+
+    /**
+     * Carga todos los datos iniciales desde el backend. Muestra un cargador durante el proceso y renderiza varios conjuntos de datos (estudiantes, docentes, externos, tesis, eventos, instituciones) al tener éxito. Muestra mensajes de error si la carga falla.
+     */
     function cargarTodosLosDatos() {
-       mostrarLoader(true);
-       google.script.run.withSuccessHandler(res => {
-           if(res.success) {
-               datosGlobales = res.data;
-               // Renderizamos solo si las funciones existen (seguridad)
-               if(typeof renderEstudiantes === 'function') renderEstudiantes(datosGlobales.estudiantes);
-               if(typeof renderDocentes === 'function') renderDocentes(datosGlobales.docentes);
-               if(typeof renderExternos === 'function') renderExternos(datosGlobales.externos);
-               if(typeof renderTesis === 'function') renderTesis(datosGlobales.tesis);
-               if(typeof renderEventos === 'function') renderEventos(datosGlobales.eventos);
-               if(typeof renderInstituciones === 'function') renderInstituciones(datosGlobales.instituciones);
-           }
-           mostrarLoader(false);
-       }).withFailureHandler(err => {
-           console.error(err);
-           mostrarLoader(false);
-           Swal.fire('Error', 'No se pudieron cargar los datos.', 'error');
-       }).obtenerDatosIniciales();
+        mostrarLoader(true);
+        google.script.run.withSuccessHandler(res => {
+            if (res.success) {
+                datosGlobales = res.data;
+                if (typeof renderEstudiantes === 'function') renderEstudiantes(datosGlobales.estudiantes);
+                if (typeof renderDocentes === 'function') renderDocentes(datosGlobales.docentes);
+                if (typeof renderExternos === 'function') renderExternos(datosGlobales.externos);
+                if (typeof renderTesis === 'function') renderTesis(datosGlobales.tesis);
+                if (typeof renderEventos === 'function') renderEventos(datosGlobales.eventos);
+                if (typeof renderInstituciones === 'function') renderInstituciones(datosGlobales.instituciones);
+            }
+            mostrarLoader(false);
+        }).withFailureHandler(err => {
+            console.error(err);
+            mostrarLoader(false);
+            Swal.fire('Error', 'No se pudieron cargar los datos.', 'error');
+        }).obtenerDatosIniciales();
     }
 
-    // ==========================================
-    // 2. VALIDACIONES EN TIEMPO REAL
-    // ==========================================
-    function validarInput(input, tipo) { 
-        let esValido = true; 
+    /**
+     * Valida un campo de entrada en tiempo real según su tipo y atributos.
+     * Verifica campos obligatorios, restringe entrada a texto o números según tipo e ID, formatea teléfonos y valida formato de email. Aplica feedback visual.
+     *
+     * @param {HTMLInputElement} input - El elemento HTML de entrada a validar.
+     * @param {string} tipo - El tipo de validación ('texto', 'numero', 'telefono', 'email').
+     */
+    function validarInput(input, tipo) {
+        let esValido = true;
         const valor = input.value;
         const id = input.id;
 
         // Regla: Campos Obligatorios
         if (input.hasAttribute('required') && valor.trim() === '') {
             esValido = false;
-        } 
+        }
 
         // Regla: Solo Texto (Nombres y Apellidos) -> NO NÚMEROS
         if (tipo === 'texto') {
@@ -42,27 +49,26 @@
                 input.value = valor.replace(/[0-9]/g, ''); // Borra números automáticamente
             }
         }
-        
+
         // Regla: Documentos (Numérico estricto para CC/TI, Alfanumérico para otros)
         if (tipo === 'numero' || id.includes('cedula') || id.includes('documento')) {
             const prefijo = id.split('-')[0]; // est, doc, ext
             const selectTipoDoc = document.getElementById(`${prefijo}-tipo-documento`);
-            
+
             // Si hay selector y es CC o TI, prohibir letras
             if (selectTipoDoc && (selectTipoDoc.value === 'CC' || selectTipoDoc.value === 'TI')) {
                 if (/\D/.test(valor)) input.value = valor.replace(/\D/g, '');
             }
-            // Si es Pasaporte, Extranjería o no hay selector, PERMITIR letras (no hacemos nada)
         }
-        
+
         // Regla: Teléfono (Solo números y el símbolo +)
         if (tipo === 'telefono') {
-             input.value = valor.replace(/[^0-9+]/g, '');
+            input.value = valor.replace(/[^0-9+]/g, '');
         }
 
         // Regla: Email
         if (tipo === 'email' && valor.length > 0) {
-            if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(valor)) esValido = false; 
+            if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(valor)) esValido = false;
         }
 
         // Aplicar estilos visuales
@@ -75,96 +81,193 @@
         }
     }
 
-    // ==========================================
-    // 3. HELPERS VISUALES (TOGGLES)
-    // ==========================================
-    function toggleReingreso() { const s=document.getElementById('reingresoSi'); const d=document.getElementById('div-est-reingreso'); if(s && d) d.style.display=s.checked?'block':'none'; }
-    
-    function toggleEstadoEstudiante() { 
-        const v = val('est-estado'); 
-        const dGrad = document.getElementById('div-est-graduado'); 
-        const dRet = document.getElementById('div-est-retirado'); 
-        if(dGrad) dGrad.style.display = (v === 'Graduado') ? 'block' : 'none'; 
-        if(dRet) dRet.style.display = (v === 'Retirado') ? 'block' : 'none'; 
-    }
-    
-    function toggleDocenteActivo() { 
-        const d = document.getElementById('div-doc-desvinculacion'); 
-        if(d) d.style.display = (val('doc-activo') === 'No') ? 'block' : 'none'; 
+    /**
+     * Alterna la visibilidad de la sección de reingreso según el estado del checkbox 'reingresoSi'.
+     */
+    function toggleReingreso() {
+        const s = document.getElementById('reingresoSi');
+        const d = document.getElementById('div-est-reingreso');
+        if (s && d) d.style.display = s.checked ? 'block' : 'none';
     }
 
-    // ==========================================
-    // 4. FUNCIONES DE UTILIDAD GENERAL
-    // ==========================================
-    function val(id){ const el = document.getElementById(id); return el ? el.value : ''; }
-    function setVal(id,v){ const el = document.getElementById(id); if(el) el.value=v||''; }
-    
-    function mostrarLoader(v){ document.getElementById('loader').style.display=v?'flex':'none'; }
-    
-    function filtrarTabla(id,t){ 
-        const v=t.toLowerCase(); 
-        document.querySelectorAll(`#${id}-body tr`).forEach(r=>{ 
-            const txt = r.innerText.toLowerCase(); 
-            const search = r.getAttribute('data-search')||''; 
-            r.style.display=(txt.includes(v)||search.includes(v))?'':'none'; 
-        }); 
+    /**
+     * Alterna la visibilidad de las secciones de 'graduado' y 'retirado' según el estado seleccionado del estudiante.
+     */
+    function toggleEstadoEstudiante() {
+        const v = val('est-estado');
+        const dGrad = document.getElementById('div-est-graduado');
+        const dRet = document.getElementById('div-est-retirado');
+        if (dGrad) dGrad.style.display = (v === 'Graduado') ? 'block' : 'none';
+        if (dRet) dRet.style.display = (v === 'Retirado') ? 'block' : 'none';
     }
 
-    // ==========================================
-    // 5. GESTIÓN DE TABLAS Y SELECCIÓN
-    // ==========================================
-    function getCheck(id) { return `<input type="checkbox" class="row-checkbox" value="${id}" onchange="gestionarSeleccion('${id}')">`; }
-    
-    function getBotonesAccion(mod, id) { 
-        return `<div class="btn-group"><button class="btn btn-sm btn-light border text-info" onclick="verDetalle('${mod}','${id}')" title="Ver Detalle"><i class="fas fa-eye"></i></button><button class="btn btn-sm btn-light border text-primary" onclick="editarIndividual('${mod}','${id}')" title="Editar"><i class="fas fa-pen"></i></button><button class="btn btn-sm btn-light border text-danger" onclick="eliminarIndividual('${mod}','${id}')" title="Eliminar"><i class="fas fa-trash"></i></button></div>`; 
+    /**
+     * Toggles the visibility of the 'desvinculacion' division for a teacher based on whether they are marked as 'Activo' (Yes/No).
+     */
+    function toggleDocenteActivo() {
+        const d = document.getElementById('div-doc-desvinculacion');
+        if (d) d.style.display = (val('doc-activo') === 'No') ? 'block' : 'none';
     }
-    
-    function setModulo(mod) { moduloActual = mod; deseleccionarTodo(); }
 
-    function gestionarSeleccion(id){ if(seleccionados.has(id)) seleccionados.delete(id); else seleccionados.add(id); updateBarra(); }
-    
-    function toggleSeleccionarTodo(el,id){ 
-        document.querySelectorAll(`#${id} .row-checkbox`).forEach(c=>{ 
-            c.checked=el.checked; 
-            el.checked ? seleccionados.add(c.value) : seleccionados.delete(c.value); 
-        }); 
-        updateBarra(); 
+    /**
+     * Obtiene el valor de un elemento HTML por su ID.
+     *
+     * @param {string} id - El ID del elemento HTML.
+     * @returns {string} El valor del elemento, o cadena vacía si no se encuentra.
+     */
+    function val(id) {
+        const el = document.getElementById(id);
+        return el ? el.value : '';
     }
-    
-    function deseleccionarTodo(){ seleccionados.clear(); document.querySelectorAll('.row-checkbox').forEach(c=>c.checked=false); updateBarra(); }
-    
-    function updateBarra(){ 
+
+    /**
+     * Establece el valor de un elemento HTML por su ID.
+     *
+     * @param {string} id - El ID del elemento HTML.
+     * @param {string} v - El valor a establecer.
+     */
+    function setVal(id, v) {
+        const el = document.getElementById(id);
+        if (el) el.value = v || '';
+    }
+
+    /**
+     * Muestra u oculta el elemento de carga (loader).
+     *
+     * @param {boolean} v - Booleano que indica si mostrar (true) u ocultar (false).
+     */
+    function mostrarLoader(v) {
+        document.getElementById('loader').style.display = v ? 'flex' : 'none';
+    }
+
+    /**
+     * Filtra las filas de la tabla según un término de búsqueda.
+     *
+     * @param {string} id - El ID del cuerpo de la tabla (ej. 'est-body').
+     * @param {string} t - El término de búsqueda.
+     */
+    function filtrarTabla(id, t) {
+        const v = t.toLowerCase();
+        document.querySelectorAll(`#${id}-body tr`).forEach(r => {
+            const txt = r.innerText.toLowerCase();
+            const search = r.getAttribute('data-search') || '';
+            r.style.display = (txt.includes(v) || search.includes(v)) ? '' : 'none';
+        });
+    }
+
+    /**
+     * Genera un input checkbox para las filas de una tabla.
+     *
+     * @param {string} id - Identificador único de la fila.
+     * @returns {string} Cadena HTML para el input checkbox.
+     */
+    function getCheck(id) {
+        return `<input type="checkbox" class="row-checkbox" value="${id}" onchange="gestionarSeleccion('${id}')">`;
+    }
+
+    /**
+     * Genera un grupo de botones de acción (Ver, Editar, Eliminar) para una fila.
+     *
+     * @param {string} mod - Nombre del módulo (ej. 'estudiante').
+     * @param {string} id - Identificador único del ítem.
+     * @returns {string} Cadena HTML con el grupo de botones.
+     */
+    function getBotonesAccion(mod, id) {
+        return `<div class="btn-group"><button class="btn btn-sm btn-light border text-info" onclick="verDetalle('${mod}','${id}')" title="Ver Detalle"><i class="fas fa-eye"></i></button><button class="btn btn-sm btn-light border text-primary" onclick="editarIndividual('${mod}','${id}')" title="Editar"><i class="fas fa-pen"></i></button><button class="btn btn-sm btn-light border text-danger" onclick="eliminarIndividual('${mod}','${id}')" title="Eliminar"><i class="fas fa-trash"></i></button></div>`;
+    }
+
+    /**
+     * Establece el módulo actual y limpia cualquier selección existente.
+     *
+     * @param {string} mod - El nombre del módulo a activar.
+     */
+    function setModulo(mod) {
+        moduloActual = mod;
+        deseleccionarTodo();
+    }
+
+    /**
+     * Gestiona el estado de selección de un ítem. Añade o quita el ID del conjunto `seleccionados` y actualiza la barra.
+     *
+     * @param {string} id - El identificador único del ítem.
+     */
+    function gestionarSeleccion(id) {
+        if (seleccionados.has(id)) seleccionados.delete(id);
+        else seleccionados.add(id);
+        updateBarra();
+    }
+
+    /**
+     * Alterna la selección de todos los checkboxes en un cuerpo de tabla.
+     *
+     * @param {HTMLInputElement} el - El checkbox de 'seleccionar todo'.
+     * @param {string} id - El ID del cuerpo de la tabla.
+     */
+    function toggleSeleccionarTodo(el, id) {
+        document.querySelectorAll(`#${id} .row-checkbox`).forEach(c => {
+            c.checked = el.checked;
+            el.checked ? seleccionados.add(c.value) : seleccionados.delete(c.value);
+        });
+        updateBarra();
+    }
+
+    /**
+     * Deselecciona todos los checkboxes y limpia el conjunto `seleccionados`.
+     */
+    function deseleccionarTodo() {
+        seleccionados.clear();
+        document.querySelectorAll('.row-checkbox').forEach(c => c.checked = false);
+        updateBarra();
+    }
+
+    /**
+     * Actualiza el contador mostrado en la barra de selección y alterna su visibilidad.
+     */
+    function updateBarra() {
         const contador = document.getElementById('contador-seleccion');
         const barra = document.querySelector('.floating-action-bar');
-        if(contador) contador.innerText=seleccionados.size; 
-        if(barra) barra.classList.toggle('visible', seleccionados.size > 0); 
+        if (contador) contador.innerText = seleccionados.size;
+        if (barra) barra.classList.toggle('visible', seleccionados.size > 0);
     }
 
-    // ==========================================
-    // 6. COMUNICACIÓN CON BACKEND (CALLBACKS)
-    // ==========================================
-    function cb(res){ 
-        mostrarLoader(false); 
-        if(res.success){ 
-            Swal.fire({ title: 'Listo', text: res.message, icon: 'success', timer: 1500, showConfirmButton: false }); 
+    /**
+     * Función callback para operaciones exitosas en el backend. Oculta el loader, muestra un mensaje, cierra modales, recarga datos y limpia selección.
+     *
+     * @param {object} res - Objeto de respuesta del backend (success, message).
+     */
+    function cb(res) {
+        mostrarLoader(false);
+        if (res.success) {
+            Swal.fire({ title: 'Listo', text: res.message, icon: 'success', timer: 1500, showConfirmButton: false });
             // Cerrar cualquier modal abierto
-            document.querySelectorAll('.modal').forEach(m => { 
-                const instance = bootstrap.Modal.getInstance(m); 
-                if (instance) instance.hide(); 
-            }); 
-            cargarTodosLosDatos(); 
-            deseleccionarTodo(); 
+            document.querySelectorAll('.modal').forEach(m => {
+                const instance = bootstrap.Modal.getInstance(m);
+                if (instance) instance.hide();
+            });
+            cargarTodosLosDatos();
+            deseleccionarTodo();
         } else {
-            Swal.fire('Error', res.message, 'error'); 
+            Swal.fire('Error', res.message, 'error');
         }
     }
-    
-    function err(e) { mostrarLoader(false); Swal.fire('Error de Sistema', e.message, 'error'); }
-    
-    function configurarListenersGlobales() { 
-        document.querySelectorAll('form').forEach(f => f.addEventListener('submit', e => { 
-            e.preventDefault(); 
-            enviarFormulario(f.id); 
-        })); 
+
+    /**
+     * Función callback para manejar errores en operaciones del backend.
+     *
+     * @param {Error} e - El objeto del error.
+     */
+    function err(e) {
+        mostrarLoader(false);
+        Swal.fire('Error de Sistema', e.message, 'error');
+    }
+
+    /**
+     * Configura listeners de eventos globales, específicamente para el envío de formularios.
+     */
+    function configurarListenersGlobales() {
+        document.querySelectorAll('form').forEach(f => f.addEventListener('submit', e => {
+            e.preventDefault();
+            enviarFormulario(f.id);
+        }));
     }
 </script>

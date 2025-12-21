@@ -1,200 +1,238 @@
+<!-- 
+  Data tables component.
+  Organizes data into tabs for each module (Students, Teachers, Externals, Thesis, Events, Institutions).
+  Each tab includes:
+  - Search input for real-time filtering.
+  - Export dropdown for Excel and PDF.
+  - Responsive table with selection checkboxes and action buttons.
+-->
 <div class="tab-content p-3">
-  
-  <div class="tab-pane fade show active" id="estudiantes">
-    <div class="d-flex justify-content-between mb-3 align-items-center">
-       <div class="input-group w-50 shadow-sm">
-           <span class="input-group-text bg-white"><i class="fas fa-search text-muted"></i></span>
-           <input type="text" class="form-control border-start-0" placeholder="Buscar estudiante..." onkeyup="filtrarTabla('tabla-estudiantes', this.value)">
-       </div>
-       <div class="btn-group shadow-sm">
-           <button type="button" class="btn btn-success btn-sm dropdown-toggle" data-bs-toggle="dropdown"><i class="fas fa-download me-1"></i> Exportar</button>
-           <ul class="dropdown-menu dropdown-menu-end">
-               <li><button type="button" class="dropdown-item" onclick="exportarData('excel')"><i class="fas fa-file-excel text-success me-2"></i>Excel</button></li>
-               <li><button type="button" class="dropdown-item" onclick="exportarData('pdf')"><i class="fas fa-file-pdf text-danger me-2"></i>PDF</button></li>
-           </ul>
-       </div>
-    </div>
-    <div class="table-responsive">
-        <table class="table table-hover align-middle table-sm">
-            <thead class="table-dark">
-                <tr>
-                    <th><input type="checkbox" class="row-checkbox" onchange="toggleSeleccionarTodo(this,'tabla-estudiantes-body')"></th>
-                    <th>ID</th>
-                    <th>Apellidos y Nombres</th>
-                    <th>Documento</th>
-                    <th>Cohorte</th>
-                    <th>Estado</th>
-                    <th>Acciones</th>
-                </tr>
-            </thead>
-            <tbody id="tabla-estudiantes-body"></tbody>
-        </table>
-    </div>
-  </div>
 
-  <div class="tab-pane fade" id="docentes">
-     <div class="d-flex justify-content-between mb-3 align-items-center">
-       <div class="input-group w-50 shadow-sm">
-           <span class="input-group-text bg-white"><i class="fas fa-search text-muted"></i></span>
-           <input type="text" class="form-control border-start-0" placeholder="Buscar docente..." onkeyup="filtrarTabla('tabla-docentes', this.value)">
-       </div>
-       <div class="btn-group shadow-sm">
-           <button type="button" class="btn btn-success btn-sm dropdown-toggle" data-bs-toggle="dropdown"><i class="fas fa-download me-1"></i> Exportar</button>
-           <ul class="dropdown-menu dropdown-menu-end">
-               <li><button type="button" class="dropdown-item" onclick="exportarData('excel')"><i class="fas fa-file-excel text-success me-2"></i>Excel</button></li>
-               <li><button type="button" class="dropdown-item" onclick="exportarData('pdf')"><i class="fas fa-file-pdf text-danger me-2"></i>PDF</button></li>
-           </ul>
-       </div>
-    </div>
-    <div class="table-responsive">
-        <table class="table table-hover align-middle table-sm">
-            <thead class="table-dark">
-                <tr>
-                    <th><input type="checkbox" class="row-checkbox" onchange="toggleSeleccionarTodo(this,'tabla-docentes-body')"></th>
-                    <th>ID</th>
-                    <th>Docente</th>
-                    <th>Cédula</th>
-                    <th>Email</th>
-                    <th>Vinculación</th>
-                    <th>Estado</th>
-                    <th>Acciones</th>
-                </tr>
-            </thead>
-            <tbody id="tabla-docentes-body"></tbody>
-        </table>
-    </div>
-  </div>
-
-  <div class="tab-pane fade" id="externos">
-     <div class="d-flex justify-content-between mb-3 align-items-center">
-       <div class="input-group w-50 shadow-sm">
-           <span class="input-group-text bg-white"><i class="fas fa-search text-muted"></i></span>
-           <input type="text" class="form-control border-start-0" placeholder="Buscar externo..." onkeyup="filtrarTabla('tabla-externos', this.value)">
-       </div>
-       <div class="btn-group shadow-sm">
-           <button type="button" class="btn btn-success btn-sm dropdown-toggle" data-bs-toggle="dropdown"><i class="fas fa-download me-1"></i> Exportar</button>
-           <ul class="dropdown-menu dropdown-menu-end">
-               <li><button type="button" class="dropdown-item" onclick="exportarData('excel')"><i class="fas fa-file-excel text-success me-2"></i>Excel</button></li>
-               <li><button type="button" class="dropdown-item" onclick="exportarData('pdf')"><i class="fas fa-file-pdf text-danger me-2"></i>PDF</button></li>
-           </ul>
-       </div>
-    </div>
-    <div class="table-responsive">
-        <table class="table table-hover align-middle table-sm">
-            <thead class="table-dark">
-                <tr>
-                    <th><input type="checkbox" class="row-checkbox" onchange="toggleSeleccionarTodo(this,'tabla-externos-body')"></th>
-                    <th>ID</th>
-                    <th>Nombre Completo</th>
-                    <th>Organización</th>
-                    <th>Origen</th>
-                    <th>País/Ciudad</th>
-                    <th>Acciones</th>
-                </tr>
-            </thead>
-            <tbody id="tabla-externos-body"></tbody>
-        </table>
-    </div>
-  </div>
-
-  <div class="tab-pane fade" id="tesis">
-      <div class="d-flex justify-content-between mb-3 align-items-center">
-        <div class="input-group w-50 shadow-sm">
-            <span class="input-group-text bg-white"><i class="fas fa-search text-muted"></i></span>
-            <input type="text" class="form-control border-start-0" placeholder="Buscar tesis..." onkeyup="filtrarTabla('tabla-tesis', this.value)">
+    <div class="tab-pane fade show active" id="estudiantes">
+        <div class="d-flex justify-content-between mb-3 align-items-center">
+            <div class="input-group w-50 shadow-sm">
+                <span class="input-group-text bg-white"><i class="fas fa-search text-muted"></i></span>
+                <input type="text" class="form-control border-start-0" placeholder="Buscar estudiante..."
+                    onkeyup="filtrarTabla('tabla-estudiantes', this.value)">
+            </div>
+            <div class="btn-group shadow-sm">
+                <button type="button" class="btn btn-success btn-sm dropdown-toggle" data-bs-toggle="dropdown"><i
+                        class="fas fa-download me-1"></i> Exportar</button>
+                <ul class="dropdown-menu dropdown-menu-end">
+                    <li><button type="button" class="dropdown-item" onclick="exportarData('excel')"><i
+                                class="fas fa-file-excel text-success me-2"></i>Excel</button></li>
+                    <li><button type="button" class="dropdown-item" onclick="exportarData('pdf')"><i
+                                class="fas fa-file-pdf text-danger me-2"></i>PDF</button></li>
+                </ul>
+            </div>
         </div>
-        <div class="btn-group shadow-sm">
-            <button type="button" class="btn btn-success btn-sm dropdown-toggle" data-bs-toggle="dropdown"><i class="fas fa-download me-1"></i> Exportar</button>
-            <ul class="dropdown-menu dropdown-menu-end">
-                <li><button type="button" class="dropdown-item" onclick="exportarData('excel')"><i class="fas fa-file-excel text-success me-2"></i>Excel</button></li>
-                <li><button type="button" class="dropdown-item" onclick="exportarData('pdf')"><i class="fas fa-file-pdf text-danger me-2"></i>PDF</button></li>
-            </ul>
+        <div class="table-responsive">
+            <table class="table table-hover align-middle table-sm">
+                <thead class="table-dark">
+                    <tr>
+                        <th><input type="checkbox" class="row-checkbox"
+                                onchange="toggleSeleccionarTodo(this,'tabla-estudiantes-body')"></th>
+                        <th>ID</th>
+                        <th>Apellidos y Nombres</th>
+                        <th>Documento</th>
+                        <th>Cohorte</th>
+                        <th>Estado</th>
+                        <th>Acciones</th>
+                    </tr>
+                </thead>
+                <tbody id="tabla-estudiantes-body"></tbody>
+            </table>
         </div>
-      </div>
-      <div class="table-responsive">
-        <table class="table table-hover align-middle table-sm">
-            <thead class="table-dark">
-                <tr>
-                    <th><input type="checkbox" class="row-checkbox" onchange="toggleSeleccionarTodo(this,'tabla-tesis-body')"></th>
-                    <th>ID</th>
-                    <th>Título</th>
-                    <th>Estudiante</th>
-                    <th>Asesor</th>
-                    <th>Línea Inv.</th>
-                    <th>Estado</th>
-                    <th>Modalidad</th>
-                    <th>Acciones</th>
-                </tr>
-            </thead>
-            <tbody id="tabla-tesis-body"></tbody>
-        </table>
-      </div>
-  </div>
-  
-  <div class="tab-pane fade" id="eventos">
-      <div class="d-flex justify-content-between mb-3 align-items-center">
-          <div class="input-group w-50 shadow-sm">
-              <span class="input-group-text bg-white"><i class="fas fa-search text-muted"></i></span>
-              <input type="text" class="form-control border-start-0" placeholder="Buscar evento..." onkeyup="filtrarTabla('tabla-eventos', this.value)">
-          </div>
-          <div class="btn-group shadow-sm">
-              <button type="button" class="btn btn-success btn-sm dropdown-toggle" data-bs-toggle="dropdown"><i class="fas fa-download me-1"></i> Exportar</button>
-              <ul class="dropdown-menu dropdown-menu-end">
-                  <li><button type="button" class="dropdown-item" onclick="exportarData('excel')"><i class="fas fa-file-excel text-success me-2"></i>Excel</button></li>
-                  <li><button type="button" class="dropdown-item" onclick="exportarData('pdf')"><i class="fas fa-file-pdf text-danger me-2"></i>PDF</button></li>
-              </ul>
-          </div>
-      </div>
-      <div class="table-responsive">
-        <table class="table table-hover align-middle table-sm">
-            <thead class="table-dark">
-                <tr>
-                    <th><input type="checkbox" class="row-checkbox" onchange="toggleSeleccionarTodo(this,'tabla-eventos-body')"></th>
-                    <th>ID</th>
-                    <th>Evento</th>
-                    <th>Rol Maestría</th>
-                    <th>Tipo</th>
-                    <th>Instituciones</th>
-                    <th>Lugar/Fecha</th>
-                    <th>Modalidad</th>
-                    <th>Acciones</th>
-                </tr>
-            </thead>
-            <tbody id="tabla-eventos-body"></tbody>
-        </table>
-      </div>
-  </div>
-  
-  <div class="tab-pane fade" id="instituciones">
-      <div class="d-flex justify-content-between mb-3 align-items-center">
-          <div class="input-group w-50 shadow-sm">
-              <span class="input-group-text bg-white"><i class="fas fa-search text-muted"></i></span>
-              <input type="text" class="form-control border-start-0" placeholder="Buscar institución..." onkeyup="filtrarTabla('tabla-instituciones', this.value)">
-          </div>
-          <div class="btn-group shadow-sm">
-              <button type="button" class="btn btn-success btn-sm dropdown-toggle" data-bs-toggle="dropdown"><i class="fas fa-download me-1"></i> Exportar</button>
-              <ul class="dropdown-menu dropdown-menu-end">
-                  <li><button type="button" class="dropdown-item" onclick="exportarData('excel')"><i class="fas fa-file-excel text-success me-2"></i>Excel</button></li>
-                  <li><button type="button" class="dropdown-item" onclick="exportarData('pdf')"><i class="fas fa-file-pdf text-danger me-2"></i>PDF</button></li>
-              </ul>
-          </div>
-      </div>
-      <div class="table-responsive">
-          <table class="table table-hover align-middle table-sm">
-            <thead class="table-dark">
-                <tr>
-                    <th><input type="checkbox" class="row-checkbox" onchange="toggleSeleccionarTodo(this,'tabla-instituciones-body')"></th>
-                    <th>ID</th>
-                    <th>Institución</th>
-                    <th>País</th>
-                    <th>Tipo</th>
-                    <th>Vigente</th>
-                    <th>Acciones</th>
-                </tr>
-            </thead>
-            <tbody id="tabla-instituciones-body"></tbody>
-          </table>
-      </div>
-  </div>
+    </div>
+
+    <div class="tab-pane fade" id="docentes">
+        <div class="d-flex justify-content-between mb-3 align-items-center">
+            <div class="input-group w-50 shadow-sm">
+                <span class="input-group-text bg-white"><i class="fas fa-search text-muted"></i></span>
+                <input type="text" class="form-control border-start-0" placeholder="Buscar docente..."
+                    onkeyup="filtrarTabla('tabla-docentes', this.value)">
+            </div>
+            <div class="btn-group shadow-sm">
+                <button type="button" class="btn btn-success btn-sm dropdown-toggle" data-bs-toggle="dropdown"><i
+                        class="fas fa-download me-1"></i> Exportar</button>
+                <ul class="dropdown-menu dropdown-menu-end">
+                    <li><button type="button" class="dropdown-item" onclick="exportarData('excel')"><i
+                                class="fas fa-file-excel text-success me-2"></i>Excel</button></li>
+                    <li><button type="button" class="dropdown-item" onclick="exportarData('pdf')"><i
+                                class="fas fa-file-pdf text-danger me-2"></i>PDF</button></li>
+                </ul>
+            </div>
+        </div>
+        <div class="table-responsive">
+            <table class="table table-hover align-middle table-sm">
+                <thead class="table-dark">
+                    <tr>
+                        <th><input type="checkbox" class="row-checkbox"
+                                onchange="toggleSeleccionarTodo(this,'tabla-docentes-body')"></th>
+                        <th>ID</th>
+                        <th>Docente</th>
+                        <th>Cédula</th>
+                        <th>Email</th>
+                        <th>Vinculación</th>
+                        <th>Estado</th>
+                        <th>Acciones</th>
+                    </tr>
+                </thead>
+                <tbody id="tabla-docentes-body"></tbody>
+            </table>
+        </div>
+    </div>
+
+    <div class="tab-pane fade" id="externos">
+        <div class="d-flex justify-content-between mb-3 align-items-center">
+            <div class="input-group w-50 shadow-sm">
+                <span class="input-group-text bg-white"><i class="fas fa-search text-muted"></i></span>
+                <input type="text" class="form-control border-start-0" placeholder="Buscar externo..."
+                    onkeyup="filtrarTabla('tabla-externos', this.value)">
+            </div>
+            <div class="btn-group shadow-sm">
+                <button type="button" class="btn btn-success btn-sm dropdown-toggle" data-bs-toggle="dropdown"><i
+                        class="fas fa-download me-1"></i> Exportar</button>
+                <ul class="dropdown-menu dropdown-menu-end">
+                    <li><button type="button" class="dropdown-item" onclick="exportarData('excel')"><i
+                                class="fas fa-file-excel text-success me-2"></i>Excel</button></li>
+                    <li><button type="button" class="dropdown-item" onclick="exportarData('pdf')"><i
+                                class="fas fa-file-pdf text-danger me-2"></i>PDF</button></li>
+                </ul>
+            </div>
+        </div>
+        <div class="table-responsive">
+            <table class="table table-hover align-middle table-sm">
+                <thead class="table-dark">
+                    <tr>
+                        <th><input type="checkbox" class="row-checkbox"
+                                onchange="toggleSeleccionarTodo(this,'tabla-externos-body')"></th>
+                        <th>ID</th>
+                        <th>Nombre Completo</th>
+                        <th>Organización</th>
+                        <th>Origen</th>
+                        <th>País/Ciudad</th>
+                        <th>Acciones</th>
+                    </tr>
+                </thead>
+                <tbody id="tabla-externos-body"></tbody>
+            </table>
+        </div>
+    </div>
+
+    <div class="tab-pane fade" id="tesis">
+        <div class="d-flex justify-content-between mb-3 align-items-center">
+            <div class="input-group w-50 shadow-sm">
+                <span class="input-group-text bg-white"><i class="fas fa-search text-muted"></i></span>
+                <input type="text" class="form-control border-start-0" placeholder="Buscar tesis..."
+                    onkeyup="filtrarTabla('tabla-tesis', this.value)">
+            </div>
+            <div class="btn-group shadow-sm">
+                <button type="button" class="btn btn-success btn-sm dropdown-toggle" data-bs-toggle="dropdown"><i
+                        class="fas fa-download me-1"></i> Exportar</button>
+                <ul class="dropdown-menu dropdown-menu-end">
+                    <li><button type="button" class="dropdown-item" onclick="exportarData('excel')"><i
+                                class="fas fa-file-excel text-success me-2"></i>Excel</button></li>
+                    <li><button type="button" class="dropdown-item" onclick="exportarData('pdf')"><i
+                                class="fas fa-file-pdf text-danger me-2"></i>PDF</button></li>
+                </ul>
+            </div>
+        </div>
+        <div class="table-responsive">
+            <table class="table table-hover align-middle table-sm">
+                <thead class="table-dark">
+                    <tr>
+                        <th><input type="checkbox" class="row-checkbox"
+                                onchange="toggleSeleccionarTodo(this,'tabla-tesis-body')"></th>
+                        <th>ID</th>
+                        <th>Título</th>
+                        <th>Estudiante</th>
+                        <th>Asesor</th>
+                        <th>Línea Inv.</th>
+                        <th>Estado</th>
+                        <th>Modalidad</th>
+                        <th>Acciones</th>
+                    </tr>
+                </thead>
+                <tbody id="tabla-tesis-body"></tbody>
+            </table>
+        </div>
+    </div>
+
+    <div class="tab-pane fade" id="eventos">
+        <div class="d-flex justify-content-between mb-3 align-items-center">
+            <div class="input-group w-50 shadow-sm">
+                <span class="input-group-text bg-white"><i class="fas fa-search text-muted"></i></span>
+                <input type="text" class="form-control border-start-0" placeholder="Buscar evento..."
+                    onkeyup="filtrarTabla('tabla-eventos', this.value)">
+            </div>
+            <div class="btn-group shadow-sm">
+                <button type="button" class="btn btn-success btn-sm dropdown-toggle" data-bs-toggle="dropdown"><i
+                        class="fas fa-download me-1"></i> Exportar</button>
+                <ul class="dropdown-menu dropdown-menu-end">
+                    <li><button type="button" class="dropdown-item" onclick="exportarData('excel')"><i
+                                class="fas fa-file-excel text-success me-2"></i>Excel</button></li>
+                    <li><button type="button" class="dropdown-item" onclick="exportarData('pdf')"><i
+                                class="fas fa-file-pdf text-danger me-2"></i>PDF</button></li>
+                </ul>
+            </div>
+        </div>
+        <div class="table-responsive">
+            <table class="table table-hover align-middle table-sm">
+                <thead class="table-dark">
+                    <tr>
+                        <th><input type="checkbox" class="row-checkbox"
+                                onchange="toggleSeleccionarTodo(this,'tabla-eventos-body')"></th>
+                        <th>ID</th>
+                        <th>Evento</th>
+                        <th>Rol Maestría</th>
+                        <th>Tipo</th>
+                        <th>Instituciones</th>
+                        <th>Lugar/Fecha</th>
+                        <th>Modalidad</th>
+                        <th>Acciones</th>
+                    </tr>
+                </thead>
+                <tbody id="tabla-eventos-body"></tbody>
+            </table>
+        </div>
+    </div>
+
+    <div class="tab-pane fade" id="instituciones">
+        <div class="d-flex justify-content-between mb-3 align-items-center">
+            <div class="input-group w-50 shadow-sm">
+                <span class="input-group-text bg-white"><i class="fas fa-search text-muted"></i></span>
+                <input type="text" class="form-control border-start-0" placeholder="Buscar institución..."
+                    onkeyup="filtrarTabla('tabla-instituciones', this.value)">
+            </div>
+            <div class="btn-group shadow-sm">
+                <button type="button" class="btn btn-success btn-sm dropdown-toggle" data-bs-toggle="dropdown"><i
+                        class="fas fa-download me-1"></i> Exportar</button>
+                <ul class="dropdown-menu dropdown-menu-end">
+                    <li><button type="button" class="dropdown-item" onclick="exportarData('excel')"><i
+                                class="fas fa-file-excel text-success me-2"></i>Excel</button></li>
+                    <li><button type="button" class="dropdown-item" onclick="exportarData('pdf')"><i
+                                class="fas fa-file-pdf text-danger me-2"></i>PDF</button></li>
+                </ul>
+            </div>
+        </div>
+        <div class="table-responsive">
+            <table class="table table-hover align-middle table-sm">
+                <thead class="table-dark">
+                    <tr>
+                        <th><input type="checkbox" class="row-checkbox"
+                                onchange="toggleSeleccionarTodo(this,'tabla-instituciones-body')"></th>
+                        <th>ID</th>
+                        <th>Institución</th>
+                        <th>País</th>
+                        <th>Tipo</th>
+                        <th>Vigente</th>
+                        <th>Acciones</th>
+                    </tr>
+                </thead>
+                <tbody id="tabla-instituciones-body"></tbody>
+            </table>
+        </div>
+    </div>
 
 </div>
